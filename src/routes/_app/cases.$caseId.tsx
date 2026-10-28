@@ -1,14 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
-import {
-  AlertTriangle,
-  ArrowLeft,
-  ArrowUpRight,
-  FileText,
-  Pencil,
-  Save,
-  ShieldCheck,
-} from "lucide-react";
+import { ArrowLeft, ArrowUpRight, FileText, Pencil, Save, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import {
   LegalDisclaimer,
@@ -33,7 +25,7 @@ import {
   CASE_TYPE_LABEL,
   deadlineCountdownLabel,
   daysUntil,
-  formatDemoDate,
+  formatDate,
   isValidDeadline,
   nextRecommendedAction,
 } from "@/lib/case-utils";
@@ -42,7 +34,6 @@ import type { CaseStatus } from "@/types";
 
 type ConfirmAction =
   | { kind: "transition"; status: CaseStatus }
-  | { kind: "breach" }
   | { kind: "approve"; escalationId: string }
   | { kind: "related-rti" };
 
@@ -72,9 +63,9 @@ export const Route = createFileRoute("/_app/cases/$caseId")({
   head: ({ loaderData }) => ({
     meta: [
       { title: `${loaderData?.c.title ?? "Case"} — NyaySetu` },
-      { name: "description", content: "Demo case summary, timeline, documents and next steps." },
+      { name: "description", content: "Case summary, timeline, documents and next steps." },
       { property: "og:title", content: "Case details — NyaySetu" },
-      { property: "og:description", content: "Review demo case details and history." },
+      { property: "og:description", content: "Review case details and history." },
     ],
   }),
   component: CaseDetails,
@@ -93,7 +84,9 @@ function CaseDetails() {
   const [expandedDraftId, setExpandedDraftId] = useState<string | null>(null);
   const [reviewConfirmed, setReviewConfirmed] = useState(false);
   const authority = authorityService.get(c.authorityId);
-  const validDeadlines = deadlines.filter(isValidDeadline);
+  const validDeadlines = deadlines.filter(
+    (deadline) => deadline.source === "verified" && isValidDeadline(deadline),
+  );
   const canCreateRelatedRti =
     c.type === "civic_fix" &&
     !["closed", "responded"].includes(c.status) &&
@@ -116,7 +109,9 @@ function CaseDetails() {
       if (!title.trim() || !summary.trim()) throw new Error("Title and summary are required.");
       caseService.update(c.id, { title: title.trim(), summary: summary.trim(), authorityId });
       setEditing(false);
-      toast.success("Case details saved in this demo session.");
+      toast.success(
+        "Case details updated in this browser session. They are not synced to your account.",
+      );
       await refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save the case.");
@@ -129,18 +124,17 @@ function CaseDetails() {
     setError("");
     try {
       if (confirm.kind === "transition") caseService.transition(c.id, confirm.status);
-      if (confirm.kind === "breach") caseService.simulateDeadlineBreach(c.id);
       if (confirm.kind === "approve") caseService.approveEscalation(confirm.escalationId);
       if (confirm.kind === "related-rti") {
         const newId = caseService.createRelatedRti(c.id);
-        toast.success("Related demo RTI draft created.");
+        toast.success("Related RTI draft created in this browser session.");
         setConfirm(null);
         await refresh();
         await router.navigate({ to: "/cases/$caseId", params: { caseId: newId } });
         setWorking(false);
         return;
       }
-      toast.success("Demo case updated.");
+      toast.success("Case preview updated in this browser session.");
       setConfirm(null);
       await refresh();
     } catch (e) {
@@ -152,30 +146,24 @@ function CaseDetails() {
 
   const confirmCopy = (() => {
     if (!confirm) return { title: "", body: "", action: "" };
-    if (confirm.kind === "breach")
-      return {
-        title: "Simulate a deadline breach?",
-        body: "This changes the selected mock case to Deadline Breached, adds a demo timeline audit event, and creates a sample escalation draft. No deadline is legally verified and nothing will be sent.",
-        action: "Simulate breach",
-      };
     if (confirm.kind === "approve")
       return {
-        title: "Approve this demo draft for review?",
-        body: "Approval is recorded only in this mock experience. It does not submit, file, send or deliver the draft to anyone.",
-        action: "Approve locally",
+        title: "Approve this draft for review?",
+        body: "This records a local review only. It does not submit, file, send or deliver the draft to anyone.",
+        action: "Confirm review",
       };
     if (confirm.kind === "related-rti")
       return {
-        title: "Create a related demo RTI case?",
-        body: "This creates a linked sample request for action-taken information. It is an editable draft only and will not be submitted.",
-        action: "Create demo case",
+        title: "Create a related RTI case?",
+        body: "This creates a linked draft preview for action-taken information. It is not saved to your account and will not be submitted.",
+        action: "Create draft",
       };
     return {
       title: `Change status to ${CASE_STATUS_LABEL[confirm.status]}?`,
       body:
         confirm.status === "escalated"
-          ? "This is a demo status only and does not mean that anything has been filed or submitted."
-          : "This will update the demo case status and add an entry to its timeline.",
+          ? "This is a local status label only. It does not mean that anything has been filed or submitted."
+          : "This updates the case preview in this browser session.",
       action: "Confirm status",
     };
   })();
@@ -189,7 +177,7 @@ function CaseDetails() {
       </Button>
       <PageHeader
         title={c.title}
-        description={`${c.id} · ${CASE_TYPE_LABEL[c.type]} · Created ${formatDemoDate(c.createdAt)}`}
+        description={`${c.id} · ${CASE_TYPE_LABEL[c.type]} · Created ${formatDate(c.createdAt)}`}
         actions={<StatusBadge status={c.status} />}
       />
       {error && (
@@ -279,7 +267,7 @@ function CaseDetails() {
             )}
             <div className="mt-5 border-t pt-4">
               <label htmlFor="case-status" className="text-sm font-medium">
-                Update demo case status
+                Update case status
               </label>
               <div className="mt-2 flex flex-wrap gap-2">
                 <select
@@ -299,15 +287,6 @@ function CaseDetails() {
                     </option>
                   ))}
                 </select>
-                {caseService.canSimulateBreach(c) && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => setConfirm({ kind: "breach" })}
-                  >
-                    <AlertTriangle /> Simulate Deadline Breach — Demo Only
-                  </Button>
-                )}
               </div>
             </div>
           </SurfaceCard>
@@ -321,7 +300,7 @@ function CaseDetails() {
                     <span className="absolute -left-[25px] top-1 h-2.5 w-2.5 rounded-full bg-teal ring-4 ring-card" />
                     <p className="text-sm font-medium">{event.title}</p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {formatDemoDate(event.at, event.at.includes("T"))}
+                      {formatDate(event.at, event.at.includes("T"))}
                     </p>
                   </li>
                 ))
@@ -351,7 +330,7 @@ function CaseDetails() {
             <h2 className="font-semibold">Deadline details</h2>
             {validDeadlines.length === 0 ? (
               <p className="mt-3 text-sm text-muted-foreground">
-                No valid demo deadline is available. No countdown is shown.
+                No verified deadline is available. No countdown is shown.
               </p>
             ) : (
               validDeadlines.map((deadline) => {
@@ -359,18 +338,17 @@ function CaseDetails() {
                 return (
                   <div key={deadline.id} className="mt-3 rounded-lg bg-muted p-3">
                     <p className="text-sm font-medium">{deadline.label}</p>
-                    <p className="mt-1 text-sm">Date: {formatDemoDate(deadline.dueDate)}</p>
+                    <p className="mt-1 text-sm">Date: {formatDate(deadline.dueDate)}</p>
                     {days !== null && (
                       <p className="mt-1 text-sm font-semibold">{deadlineCountdownLabel(days)}</p>
                     )}
                     <p className="mt-2 text-xs text-muted-foreground">
-                      Source/status: {deadline.sourceLabel}.{" "}
-                      {deadline.source === "verified" ? "Verified source" : "Simulated date"}
+                      Source/status: {deadline.sourceLabel}. Verified source
                       {deadline.met === false ? " · Marked missed" : ""}
                     </p>
                     <p className="mt-2 text-xs font-medium text-warning-foreground">
-                      Prototype reminder only — this countdown does not determine a legally valid
-                      filing deadline.
+                      A verified source does not mean NyaySetu has independently determined a
+                      legally valid filing deadline.
                     </p>
                   </div>
                 );
@@ -389,10 +367,11 @@ function CaseDetails() {
                   <li key={item.id} id={`evidence-${item.id}`} className="rounded-lg bg-muted p-3">
                     <p className="text-sm font-medium">{item.label}</p>
                     <p className="text-xs text-muted-foreground">
-                      {item.fileName} · added {formatDemoDate(item.uploadedAt)}
+                      {item.fileName} · added {formatDate(item.uploadedAt)}
                     </p>
                     <p className="mt-1 text-xs text-warning-foreground">
-                      Demo reference only — the original attachment is not stored here.
+                      This reference does not include the original attachment, which is not stored
+                      here.
                     </p>
                   </li>
                 ))}
@@ -420,8 +399,7 @@ function CaseDetails() {
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium">{doc.title}</p>
                     <p className="text-xs text-muted-foreground">
-                      {doc.kind.replaceAll("_", " ")} · {doc.status} ·{" "}
-                      {formatDemoDate(doc.createdAt)}
+                      {doc.kind.replaceAll("_", " ")} · {doc.status} · {formatDate(doc.createdAt)}
                     </p>
                   </div>
                   <Button variant="link" size="sm" asChild>
@@ -451,16 +429,16 @@ function CaseDetails() {
                   <li key={item.id} className="rounded-lg bg-muted p-3">
                     <p className="text-sm font-medium">{item.level.replaceAll("_", " ")}</p>
                     <p className="text-xs text-muted-foreground">
-                      Prepared {formatDemoDate(item.createdAt)} ·{" "}
+                      Prepared {formatDate(item.createdAt)} ·{" "}
                       {item.status === "approved"
-                        ? `Approved locally ${item.approvedAt ? formatDemoDate(item.approvedAt) : ""}`
+                        ? `Approved locally ${item.approvedAt ? formatDate(item.approvedAt) : ""}`
                         : "Awaiting review"}
                     </p>
                     {item.status === "draft" && (
                       <div className="mt-3 space-y-2">
                         <p className="text-xs text-warning-foreground">
-                          Review the full sample draft before local approval. Approval is not
-                          submission.
+                          Review the full draft before confirming this local review. It is not a
+                          submission and is not synced to your account.
                         </p>
                         <Button
                           variant="outline"
@@ -494,15 +472,14 @@ function CaseDetails() {
                                 checked={reviewConfirmed}
                                 onChange={(event) => setReviewConfirmed(event.target.checked)}
                               />
-                              I reviewed this sample draft and understand that approval will not
-                              submit it.
+                              I reviewed this draft and understand that approval will not submit it.
                             </label>
                             <Button
                               size="sm"
                               disabled={!reviewConfirmed}
                               onClick={() => setConfirm({ kind: "approve", escalationId: item.id })}
                             >
-                              <ShieldCheck /> Approve locally after review
+                              <ShieldCheck /> Confirm local review
                             </Button>
                           </div>
                         )}
@@ -516,7 +493,8 @@ function CaseDetails() {
           {canCreateRelatedRti && (
             <div className="mt-4 border-t pt-4">
               <p className="text-xs text-muted-foreground">
-                Demo workflow: create a linked sample RTI request for action-taken information.
+                Create a linked draft preview for action-taken information. It will remain in this
+                browser session.
               </p>
               <Button
                 className="mt-2"
@@ -524,7 +502,7 @@ function CaseDetails() {
                 size="sm"
                 onClick={() => setConfirm({ kind: "related-rti" })}
               >
-                Create related demo RTI
+                Create related RTI draft
               </Button>
             </div>
           )}

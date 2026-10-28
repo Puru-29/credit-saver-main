@@ -4,10 +4,7 @@ import Deadline from "../models/Deadline.js";
 import DeadlineJobRun from "../models/DeadlineJobRun.js";
 import RtiDraft from "../models/RtiDraft.js";
 import { calculateDeadlineDays, refreshDeadlineStatuses } from "./deadlineService.js";
-import {
-  generateActionTakenRtiDraft,
-  generateFirstAppealDraft,
-} from "./rtiService.js";
+import { generateActionTakenRtiDraft, generateFirstAppealDraft } from "./rtiService.js";
 
 const activeCaseStatuses = ["DRAFT", "OPEN", "IN_PROGRESS", "WAITING_FOR_RESPONSE"];
 const submittedCivicCaseStatuses = ["OPEN", "IN_PROGRESS", "WAITING_FOR_RESPONSE"];
@@ -174,14 +171,7 @@ async function prepareFirstAppeal(models, userId, deadline, caseRecord) {
   });
 }
 
-async function prepareActionTakenDraft(
-  models,
-  userId,
-  deadline,
-  civicCase,
-  complaint,
-  authority,
-) {
+async function prepareActionTakenDraft(models, userId, deadline, civicCase, complaint, authority) {
   const location = civicCase.location || {};
   const authorityName = authority.name;
   const automationKey = `deadline:${deadline._id}:CIVIC_ACTION_TAKEN_REQUEST`;
@@ -218,16 +208,11 @@ async function prepareActionTakenDraft(
 function civicDetailsSufficient(civicCase, complaint) {
   const details = civicCase.details || civicCase.summary || "";
   const location = civicCase.location || {};
-  const authorityName =
-    civicCase.authority?.name || complaint?.authorityAssignment?.name;
+  const authorityName = civicCase.authority?.name || complaint?.authorityAssignment?.name;
   const authoritySource =
     civicCase.authority?.source || complaint?.authorityAssignment?.sourceDescription;
   const hasPlace = Boolean(
-    location.address ||
-      location.locality ||
-      location.city ||
-      location.district ||
-      location.state,
+    location.address || location.locality || location.city || location.district || location.state,
   );
   return (
     typeof details === "string" &&

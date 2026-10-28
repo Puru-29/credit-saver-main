@@ -2,14 +2,7 @@ import { z } from "zod";
 
 const categories = ["POTHOLES", "GARBAGE", "STREETLIGHTS", "DRAINAGE", "WATER_SUPPLY"];
 const caseTypes = ["RTI", "RIGHTS", "CIVIC"];
-const caseStatuses = [
-  "DRAFT",
-  "OPEN",
-  "IN_PROGRESS",
-  "WAITING_FOR_RESPONSE",
-  "RESOLVED",
-  "CLOSED",
-];
+const caseStatuses = ["DRAFT", "OPEN", "IN_PROGRESS", "WAITING_FOR_RESPONSE", "RESOLVED", "CLOSED"];
 const imageMimeTypes = ["image/jpeg", "image/png", "image/webp"];
 const confidenceSchema = z.number().finite().min(0).max(1);
 
@@ -41,7 +34,10 @@ const civicImageAnalysisRequest = z
       .trim()
       .min(1)
       .max(512)
-      .regex(/^[A-Za-z0-9][A-Za-z0-9._:/-]*$/, "Image reference must be an opaque storage identifier"),
+      .regex(
+        /^[A-Za-z0-9][A-Za-z0-9._:/-]*$/,
+        "Image reference must be an opaque storage identifier",
+      ),
     mimeType: z.enum(imageMimeTypes),
   })
   .strict();
@@ -78,8 +74,13 @@ const deadlineRiskRequest = z
     caseStatus: z.enum(caseStatuses),
     daysRemaining: z.number().int().min(-3650).max(3650),
     deadlineVerificationStatus: z.enum(["VERIFIED", "UNVERIFIED"]),
-    deadlineSourceType: z
-      .enum(["OFFICIAL_SOURCE", "CONFIGURED", "RULE_DERIVED", "AI_GENERATED", "USER_PROVIDED"]),
+    deadlineSourceType: z.enum([
+      "OFFICIAL_SOURCE",
+      "CONFIGURED",
+      "RULE_DERIVED",
+      "AI_GENERATED",
+      "USER_PROVIDED",
+    ]),
   })
   .strict();
 
@@ -290,7 +291,9 @@ export function createMlService({
       };
     }
     if (operation === operations.findSimilarComplaints) {
-      if (data.matches.some((match) => match.candidateIndex >= parsedRequest.data.candidates.length)) {
+      if (
+        data.matches.some((match) => match.candidateIndex >= parsedRequest.data.candidates.length)
+      ) {
         return unavailable("invalid_response");
       }
       return {

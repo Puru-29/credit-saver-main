@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { CASE_TYPE_LABEL, formatDemoDate } from "@/lib/case-utils";
+import { CASE_TYPE_LABEL, formatDate } from "@/lib/case-utils";
 import { caseService, documentService } from "@/services/mock-service";
 import type { CaseType, Document } from "@/types";
 
@@ -20,9 +20,9 @@ export const Route = createFileRoute("/_app/documents")({
   head: () => ({
     meta: [
       { title: "Documents — NyaySetu" },
-      { name: "description", content: "Search and edit sample case documents." },
+      { name: "description", content: "Search and edit case document drafts." },
       { property: "og:title", content: "Documents — NyaySetu" },
-      { property: "og:description", content: "Search and edit your demo documents." },
+      { property: "og:description", content: "Search and edit your document drafts." },
     ],
   }),
   loader: async () => {
@@ -89,7 +89,7 @@ function DocumentsPage() {
     setError("");
     try {
       documentService.save(selectedDoc.id, content, field);
-      toast.success("Draft saved in this demo session.");
+      toast.success("Draft saved in this browser session. It is not synced to your account.");
       await router.invalidate();
       const updated = await documentService.get(selectedDoc.id);
       if (updated) setContent(documentFieldContent(updated, field));
@@ -104,7 +104,7 @@ function DocumentsPage() {
     <>
       <PageHeader
         title="Documents"
-        description="Search, edit and review sample documents. Nothing is submitted from this library."
+        description="Search, edit and review document previews. Changes stay in this browser session and are not submitted."
       />
       <div className="grid gap-4 lg:grid-cols-[minmax(16rem,0.8fr)_minmax(0,1.7fr)]">
         <div className="print:hidden">
@@ -177,7 +177,7 @@ function DocumentsPage() {
                   description={
                     documents.length
                       ? "Try changing the search or filters."
-                      : "Create a demo case to prepare its first sample document."
+                      : "Create a case to prepare its first document draft."
                   }
                 />
               </div>
@@ -199,7 +199,7 @@ function DocumentsPage() {
                             <span className="block text-sm font-medium">{doc.title}</span>
                             <span className="mt-1 block text-xs text-muted-foreground">
                               {doc.caseId} · {c?.type ? CASE_TYPE_LABEL[c.type] : "Unknown module"}{" "}
-                              · {formatDemoDate(doc.createdAt)}
+                              · {formatDate(doc.createdAt)}
                             </span>
                             <Badge variant="secondary" className="mt-2">
                               {doc.status}
@@ -323,13 +323,13 @@ function DocumentsPage() {
                   </ul>
                 ) : (
                   <p className="mt-2 text-sm text-muted-foreground">
-                    {selectedDoc.demoSourcePlaceholder ??
-                      "Demo source placeholder — no verified source is attached."}
+                    {selectedDoc.sourcePlaceholder ??
+                      "No verified source is attached to this document."}
                   </p>
                 )}
-                {selectedDoc.demoSourcePlaceholder && (
+                {selectedDoc.sourcePlaceholder && (
                   <p className="mt-2 text-xs text-warning-foreground">
-                    {selectedDoc.demoSourcePlaceholder}
+                    {selectedDoc.sourcePlaceholder}
                   </p>
                 )}
               </div>
@@ -347,7 +347,7 @@ function DocumentsPage() {
                         <div className="min-w-0">
                           <p className="text-sm font-medium">{version.note}</p>
                           <p className="text-xs text-muted-foreground">
-                            {formatDemoDate(version.savedAt)} · {version.content.length} characters
+                            {formatDate(version.savedAt)} · {version.content.length} characters
                           </p>
                           <p className="mt-1 line-clamp-2 whitespace-pre-wrap text-xs text-muted-foreground">
                             {version.content}
@@ -373,7 +373,7 @@ function DocumentsPage() {
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-4">
                 <p className="text-xs text-muted-foreground">
                   Review names, dates, facts, authority and official requirements before use. This
-                  is a demo draft.
+                  is a document preview and is not synced to your account.
                 </p>
                 <Button variant="outline" size="sm" className="print:hidden" asChild>
                   <Link to="/cases/$caseId" params={{ caseId: selectedDoc.caseId }}>

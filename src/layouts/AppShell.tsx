@@ -12,9 +12,11 @@ import {
   ScrollText,
   Shield,
   User,
+  UserRound,
   Wrench,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/useAuth";
 import {
   Dialog,
   DialogContent,
@@ -32,7 +34,6 @@ const NAV = [
   { to: "/cases", label: "My Cases", icon: Briefcase },
   { to: "/documents", label: "Documents", icon: FileText },
   { to: "/notifications", label: "Notifications", icon: Bell },
-  { to: "/admin", label: "Admin Overview", icon: LayoutDashboard },
   { to: "/profile", label: "Profile", icon: User },
 ] as const;
 
@@ -81,6 +82,14 @@ function NavList({ collapsed, onNavigate }: { collapsed?: boolean; onNavigate?: 
 export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [open, setOpen] = useState(false);
+  const { user } = useAuth();
+  const initials =
+    user?.name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("") || null;
   return (
     <div className="flex min-h-screen w-full">
       <aside
@@ -118,9 +127,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="rounded-full bg-warning/20 px-2.5 py-1 text-xs font-medium text-warning-foreground">
-              Demo Mode
-            </span>
             <Link
               to="/notifications"
               aria-label="Notifications"
@@ -130,9 +136,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
             <Link
               to="/profile"
+              aria-label={user ? `Profile: ${user.name}` : "Profile"}
               className="grid h-8 w-8 place-items-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground"
             >
-              AR
+              {initials || <UserRound aria-hidden="true" className="h-4 w-4" />}
             </Link>
           </div>
         </header>

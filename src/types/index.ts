@@ -46,7 +46,7 @@ export interface Document {
   formalContent?: string;
   citations?: DocumentCitation[];
   versions?: DocumentVersion[];
-  demoSourcePlaceholder?: string;
+  sourcePlaceholder?: string;
 }
 
 export interface DocumentCitation {
@@ -76,7 +76,7 @@ export interface Deadline {
   caseId: string;
   label: string;
   dueDate: string;
-  demoOffsetDays: number;
+  suggestedOffsetDays: number;
   met: boolean | null;
   source: "simulated" | "verified";
   sourceLabel: string;

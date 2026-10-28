@@ -18,6 +18,7 @@ export function createAuthRouter(config) {
   router.post("/register", authRateLimit, controller.register);
   router.post("/login", authRateLimit, controller.login);
   router.get("/me", requireAuth, controller.getCurrentUser);
+  router.patch("/me", requireAuth, controller.updateCurrentUser);
 
   return router;
 }

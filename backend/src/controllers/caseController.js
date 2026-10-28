@@ -3,14 +3,7 @@ import { z } from "zod";
 import Case from "../models/Case.js";
 
 const caseTypes = ["RTI", "RIGHTS", "CIVIC"];
-const caseStatuses = [
-  "DRAFT",
-  "OPEN",
-  "IN_PROGRESS",
-  "WAITING_FOR_RESPONSE",
-  "RESOLVED",
-  "CLOSED",
-];
+const caseStatuses = ["DRAFT", "OPEN", "IN_PROGRESS", "WAITING_FOR_RESPONSE", "RESOLVED", "CLOSED"];
 
 const locationSchema = z
   .object({
@@ -64,9 +57,7 @@ const updateCaseSchema = z
     message: "At least one editable field is required",
   });
 
-const statusSchema = z
-  .object({ status: z.enum(caseStatuses) })
-  .strict();
+const statusSchema = z.object({ status: z.enum(caseStatuses) }).strict();
 
 const transitions = {
   DRAFT: ["OPEN", "CLOSED"],

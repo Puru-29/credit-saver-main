@@ -19,8 +19,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { formatDemoDate } from "@/lib/case-utils";
-import { CIVIC_CATEGORIES, simulateAnalysis, type DemoAnalysis } from "@/lib/civic-rules";
+import { formatDate } from "@/lib/case-utils";
+import { CIVIC_CATEGORIES, previewAnalysis, type CivicAnalysis } from "@/lib/civic-rules";
 import { authorities, authorityService, civicService, createCase } from "@/services/mock-service";
 
 export const Route = createFileRoute("/_app/civic-fix")({
@@ -60,7 +60,7 @@ function CivicFix() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [geo, setGeo] = useState<"idle" | "loading" | "denied" | "error">("idle");
-  const [analysis, setAnalysis] = useState<DemoAnalysis | null>(null);
+  const [analysis, setAnalysis] = useState<CivicAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
   const [nearby, setNearby] = useState<Nearby>([]);
   const [showDupes, setShowDupes] = useState(false);
@@ -184,15 +184,15 @@ function CivicFix() {
         new Promise((r) => setTimeout(r, 500)),
         civicService.nearby(f.area, f.category),
       ]);
-      setAnalysis(simulateAnalysis(f.category, f.description));
+      setAnalysis(previewAnalysis(f.category, f.description));
       setNearby(near);
     } catch (e) {
       setErrors((current) => ({
         ...current,
         analysis:
           e instanceof Error
-            ? `Could not prepare the demo preview: ${e.message}`
-            : "Could not prepare the demo preview.",
+            ? `Could not prepare the local preview: ${e.message}`
+            : "Could not prepare the local preview.",
       }));
     } finally {
       setLoading(false);
@@ -206,7 +206,7 @@ function CivicFix() {
       return;
     }
     setConsent(false);
-    setDraft(`[DEMO DRAFT — REVIEW BEFORE USE]
+    setDraft(`[DRAFT FOR REVIEW — NOT SUBMITTED]
 
 To,
 ${authName}
@@ -220,7 +220,7 @@ I wish to report the following issue:
 ${f.description}
 
 Location: ${f.area}${f.coords ? ` (${f.coords})` : ""}
-${file ? `A photo was selected locally (${file.name}); it is not uploaded or attached to this demo case.` : ""}
+${file ? `A photo was selected locally (${file.name}); it is not uploaded or attached to this case.` : ""}
 
 I request that this be inspected and resolved at the earliest. Please share the complaint reference with me.
 
@@ -243,12 +243,12 @@ Date: [Date]`);
         documentContent: draft,
         evidenceFileName: file?.name,
       });
-      toast.success("Draft case saved. Nothing has been submitted.");
+      toast.success("Draft preview created in this browser session. Nothing has been submitted.");
       void navigate({ to: "/cases/$caseId", params: { caseId: id } });
     } catch (e) {
       const message = e instanceof Error ? e.message : "Could not save this draft case.";
       setErrors((current) => ({ ...current, save: message }));
-      toast.error("Could not save the demo case.");
+      toast.error("Could not create the draft preview.");
     }
   };
 
@@ -256,7 +256,7 @@ Date: [Date]`);
     <>
       <PageHeader
         title="Civic Fix"
-        description="Report a local problem and prepare a complaint draft."
+        description="Record a local problem and prepare a complaint draft. This preview is not synced to your account."
       />
       <ol className="mb-6 grid grid-cols-4 gap-2" aria-label="Progress">
         {STEPS.map((s, i) => (
@@ -470,7 +470,7 @@ Date: [Date]`);
               className="flex items-center gap-2 py-10 text-sm text-muted-foreground"
               role="status"
             >
-              <Loader2 className="h-4 w-4 animate-spin" /> Preparing demo analysis…
+              <Loader2 className="h-4 w-4 animate-spin" /> Preparing local analysis preview…
             </div>
           ) : errors["analysis"] ? (
             <div>
@@ -486,14 +486,14 @@ Date: [Date]`);
                   <Sparkles className="h-5 w-5 text-teal" /> Analysis preview
                 </h2>
                 <span className="rounded-full bg-warning/20 px-2.5 py-1 text-xs font-medium text-warning-foreground">
-                  Simulated demo — no image analysis was run
+                  Illustrative preview — no image analysis was run
                 </span>
               </div>
               <dl className="mt-4 grid gap-4 sm:grid-cols-2">
                 <Item k="Suggested category" v={cat?.label} />
                 <Item
-                  k="Demo confidence"
-                  v={`${Math.round(analysis.confidence * 100)}% (illustrative)`}
+                  k="Illustrative confidence"
+                  v={`${Math.round(analysis.confidence * 100)}% (rule-based preview only)`}
                 />
                 <Item
                   k="Suggested severity"
@@ -505,8 +505,8 @@ Date: [Date]`);
               {nearby.length > 0 ? (
                 <div className="mt-6 rounded-lg border border-warning/50 bg-warning/10 p-4">
                   <p className="flex items-center gap-2 text-sm font-medium text-warning-foreground">
-                    <AlertTriangle className="h-4 w-4" /> Possible duplicate: {nearby.length}{" "}
-                    similar sample report(s) nearby
+                    <AlertTriangle className="h-4 w-4" /> Possible match in example reports:{" "}
+                    {nearby.length}
                   </p>
                   <Button
                     variant="outline"
@@ -523,19 +523,20 @@ Date: [Date]`);
                           <MapPin className="mr-1 inline h-3.5 w-3.5" />
                           {r.title}{" "}
                           <span className="text-xs text-muted-foreground">
-                            · {r.area} · {formatDemoDate(r.reportedOn)}
+                            · {r.area} · {formatDate(r.reportedOn)}
                           </span>
                         </li>
                       ))}
                     </ul>
                   )}
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Reports are never merged automatically. You can continue with your own.
+                    These are illustrative records, not live nearby reports. They are never merged
+                    automatically.
                   </p>
                 </div>
               ) : (
                 <p className="mt-6 text-sm text-muted-foreground">
-                  No similar sample reports found nearby.
+                  No matching example reports found. Live report search is not connected.
                 </p>
               )}
               <Nav
@@ -547,7 +548,7 @@ Date: [Date]`);
               />
             </>
           ) : (
-            <ErrorState message="The demo preview is unavailable. Go back and try again." />
+            <ErrorState message="The local preview is unavailable. Go back and try again." />
           )}
         </SurfaceCard>
       )}
@@ -594,7 +595,7 @@ Date: [Date]`);
                 <Item k="Issue description" v={f.description} edit={() => setStep(0)} />
                 <Item k="Location" v={f.area} edit={() => setStep(0)} />
                 <Item
-                  k="Severity (demo)"
+                  k="Illustrative severity"
                   v={`${analysis?.severity} — ${analysis?.severityReason}`}
                 />
                 <Item k="Authority" v={authName} edit={() => setStep(2)} />

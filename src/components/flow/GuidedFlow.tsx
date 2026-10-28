@@ -141,8 +141,8 @@ export function GuidedFlow({
     } catch (e) {
       setError(
         e instanceof Error
-          ? `Could not prepare the demo document: ${e.message}`
-          : "Could not prepare the demo document.",
+          ? `Could not prepare the document draft: ${e.message}`
+          : "Could not prepare the document draft.",
       );
     }
   };
@@ -177,7 +177,7 @@ export function GuidedFlow({
       } catch {
         toast.error("The case was created, but the saved local draft could not be removed.");
       }
-      toast.success("Case created as a draft. Nothing has been submitted.");
+      toast.success("Draft preview created in this browser session. Nothing has been submitted.");
       void navigate({ to: "/cases/$caseId", params: { caseId: id } }).catch((e: unknown) => {
         setError(
           e instanceof Error
@@ -188,8 +188,8 @@ export function GuidedFlow({
     } catch (e) {
       setError(
         e instanceof Error
-          ? `Could not create the demo case: ${e.message}`
-          : "Could not create the demo case.",
+          ? `Could not create the case: ${e.message}`
+          : "Could not create the case.",
       );
     }
   };
@@ -246,7 +246,7 @@ export function GuidedFlow({
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-xl font-semibold">{documentTitle}</h2>
             <span className="rounded-full bg-warning/20 px-2.5 py-1 text-xs font-medium text-warning-foreground">
-              Demo template — edit before use
+              Local draft template — review and edit before use
             </span>
           </div>
           <Textarea

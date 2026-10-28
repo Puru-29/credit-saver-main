@@ -35,6 +35,7 @@ export function generateFirstAppealDraft({
   authorityName,
   deadlineDate,
   originalRequestReference,
+  appealGrounds,
 }) {
   return [
     "SAMPLE FIRST-APPEAL DRAFT — FOR USER REVIEW ONLY; NOT FILED",
@@ -44,6 +45,7 @@ export function generateFirstAppealDraft({
     `Original request reference: ${originalRequestReference || "[Add the original request reference]"}`,
     `Relevant date recorded by the user: ${deadlineDate || "[Add and verify the relevant date]"}`,
     "",
+    ...(appealGrounds ? ["Grounds supplied by the user:", appealGrounds, ""] : []),
     "I request review of the handling of the information request described below:",
     caseDetails,
     "",
@@ -61,7 +63,13 @@ export function generateActionTakenRtiDraft({
   location,
   authorityName,
 }) {
-  const place = [location.address, location.locality, location.city, location.district, location.state]
+  const place = [
+    location.address,
+    location.locality,
+    location.city,
+    location.district,
+    location.state,
+  ]
     .filter(Boolean)
     .join(", ");
 

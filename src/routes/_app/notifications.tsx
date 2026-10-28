@@ -3,16 +3,16 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { Bell, CheckCheck } from "lucide-react";
 import { EmptyState, LoadingState, PageHeader, SurfaceCard } from "@/components/common";
 import { Button } from "@/components/ui/button";
-import { formatDemoDate } from "@/lib/case-utils";
+import { formatDate } from "@/lib/case-utils";
 import { notificationService } from "@/services/mock-service";
 
 export const Route = createFileRoute("/_app/notifications")({
   head: () => ({
     meta: [
       { title: "Notifications — NyaySetu" },
-      { name: "description", content: "Demo deadline, draft and case updates." },
+      { name: "description", content: "Deadline, draft and case updates." },
       { property: "og:title", content: "Notifications — NyaySetu" },
-      { property: "og:description", content: "Demo deadline and case updates." },
+      { property: "og:description", content: "Deadline and case updates." },
     ],
   }),
   loader: () => notificationService.list(),
@@ -54,7 +54,7 @@ function NotificationsPage() {
     <>
       <PageHeader
         title="Notifications"
-        description="In-app demo reminders for deadlines, drafts, responses and escalation review."
+        description="Local preview updates about dates, drafts, responses and escalation review."
         actions={
           <Button variant="outline" onClick={() => void markAll()} disabled={!unreadCount}>
             <CheckCheck /> Mark all read
@@ -93,7 +93,7 @@ function NotificationsPage() {
           description={
             items.length
               ? "Choose another filter to see more updates."
-              : "Demo reminders appear here when a case has a deadline, saved draft, response update or escalation draft."
+              : "Updates appear here when a case has a date, saved draft, response update or escalation draft."
           }
         />
       ) : (
@@ -115,7 +115,7 @@ function NotificationsPage() {
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">{item.body}</p>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    {formatDemoDate(item.at)}
+                    {formatDate(item.at)}
                     {item.category && ` · ${item.category}`}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-3">

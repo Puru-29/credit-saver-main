@@ -7,6 +7,8 @@ export function createRtiRouter(config) {
   router.use(createAuthMiddleware(config));
 
   router.post("/drafts", rtiController.createDraft);
+  router.post("/drafts/:id/first-appeal", rtiController.createFirstAppealDraft);
+  router.post("/cases/:id/action-taken-request", rtiController.createActionTakenDraft);
   router.get("/drafts", rtiController.listDrafts);
   router.get("/drafts/:id", rtiController.getDraft);
   router.patch("/drafts/:id", rtiController.updateDraft);

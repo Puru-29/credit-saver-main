@@ -1,9 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
-  calculateDeadlineDays,
-  calculateEscalationReviewEligibility,
-} from "./deadlineService.js";
+import { calculateDeadlineDays, calculateEscalationReviewEligibility } from "./deadlineService.js";
 
 test("calculates upcoming, due, and overdue days by UTC calendar date", () => {
   const now = new Date("2026-10-28T09:00:00.000Z");

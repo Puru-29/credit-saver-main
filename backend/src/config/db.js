@@ -1,8 +1,13 @@
 import mongoose from "mongoose";
+import { setServers } from "node:dns";
 
-export async function connectDatabase(uri) {
+export async function connectDatabase(uri, dnsServers = []) {
   if (!uri?.trim()) {
     throw new Error("MONGODB_URI is required to connect to MongoDB.");
+  }
+
+  if (dnsServers.length > 0) {
+    setServers(dnsServers);
   }
 
   await mongoose.connect(uri);

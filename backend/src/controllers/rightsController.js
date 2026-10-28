@@ -9,10 +9,12 @@ import {
   getEvidenceChecklist,
 } from "../services/rightsService.js";
 
-const categorySchema = z.string().refine(
-  (category) => getEnabledRightsCategories().includes(category),
-  "Unsupported or disabled rights matter category",
-);
+const categorySchema = z
+  .string()
+  .refine(
+    (category) => getEnabledRightsCategories().includes(category),
+    "Unsupported or disabled rights matter category",
+  );
 
 const caseSchema = z
   .object({
@@ -53,10 +55,7 @@ const checklistSchema = z
 
 const saveDraftSchema = z
   .object({
-    caseId: z
-      .string()
-      .refine(mongoose.isObjectIdOrHexString, "Invalid case ID")
-      .optional(),
+    caseId: z.string().refine(mongoose.isObjectIdOrHexString, "Invalid case ID").optional(),
     category: categorySchema,
     kind: z.enum(["GUIDANCE", "FORMAL_LETTER"]),
     title: z.string().trim().min(1).max(200),

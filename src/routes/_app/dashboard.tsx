@@ -19,13 +19,8 @@ import {
 } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { daysUntil, formatDemoDate, isValidDeadline } from "@/lib/case-utils";
-import {
-  caseService,
-  documentService,
-  notificationService,
-  userService,
-} from "@/services/mock-service";
+import { daysUntil, formatDate, isValidDeadline } from "@/lib/case-utils";
+import { caseService, documentService, notificationService } from "@/services/mock-service";
 import { MODULES } from "@/data/modules";
 import type { Case } from "@/types";
 
@@ -62,11 +57,11 @@ const FILTERS: Record<string, (c: Case) => boolean> = {
 function Dashboard() {
   const { cases, deadlines, events, docs, notes } = Route.useLoaderData();
   const [filter, setFilter] = useState("All");
-  const user = userService.current();
   const byId = (id: string) => cases.find((c) => c.id === id);
   const upcoming = deadlines
     .filter(
       (d) =>
+        d.source === "verified" &&
         isValidDeadline(d) &&
         d.met !== false &&
         (daysUntil(d) ?? -1) >= 0 &&
@@ -91,8 +86,8 @@ function Dashboard() {
   return (
     <>
       <PageHeader
-        title={`Namaste, ${user.name.split(" ")[0]}`}
-        description="Describe a new problem or follow up on an existing case."
+        title="Your dashboard"
+        description="Review local case previews and keep track of your next steps. Preview changes are not synced to your account."
         actions={
           <Button asChild>
             <Link to="/new-case">Create Case</Link>
@@ -157,7 +152,7 @@ function Dashboard() {
                 description={
                   cases.length
                     ? "No cases match this view."
-                    : "Create a demo case to see its status and next action here."
+                    : "Create a case to see its status and next action here."
                 }
                 action={
                   !cases.length ? (
@@ -180,8 +175,7 @@ function Dashboard() {
                     <div>
                       <p className="font-medium">{c.title}</p>
                       <p className="text-xs text-muted-foreground">
-                        {c.type.replace("_", " ").toUpperCase()} · updated{" "}
-                        {formatDemoDate(c.updatedAt)}
+                        {c.type.replace("_", " ").toUpperCase()} · updated {formatDate(c.updatedAt)}
                       </p>
                     </div>
                     <StatusBadge status={c.status} />
@@ -195,7 +189,7 @@ function Dashboard() {
         <SurfaceCard>
           <h2 className="font-semibold">Upcoming deadlines</h2>
           {upcoming.length === 0 ? (
-            <p className="mt-3 text-sm text-muted-foreground">No upcoming valid demo dates.</p>
+            <p className="mt-3 text-sm text-muted-foreground">No upcoming verified dates.</p>
           ) : (
             <ul className="mt-4 space-y-3">
               {upcoming.map((d) => (
@@ -207,7 +201,8 @@ function Dashboard() {
                   >
                     <p className="text-sm font-medium">{d.label}</p>
                     <p className="text-xs text-muted-foreground">
-                      {byId(d.caseId)?.title} · due {formatDemoDate(d.dueDate)} · simulated reminder
+                      {byId(d.caseId)?.title} · due {formatDate(d.dueDate)} · date not legally
+                      verified
                     </p>
                   </Link>
                 </li>
@@ -274,7 +269,7 @@ function Dashboard() {
                     {e.title}
                   </Link>
                   <p className="text-xs text-muted-foreground">
-                    {byId(e.caseId)?.title} · {formatDemoDate(e.at, e.at.includes("T"))}
+                    {byId(e.caseId)?.title} · {formatDate(e.at, e.at.includes("T"))}
                   </p>
                 </li>
               ))}
@@ -304,7 +299,7 @@ function Dashboard() {
                     <span>
                       {d.title}
                       <span className="block text-xs text-muted-foreground">
-                        {d.status} · {formatDemoDate(d.createdAt)}
+                        {d.status} · {formatDate(d.createdAt)}
                       </span>
                     </span>
                   </Link>

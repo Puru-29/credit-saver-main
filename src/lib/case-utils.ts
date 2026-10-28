@@ -27,7 +27,7 @@ export function isValidDeadline(deadline: Deadline): boolean {
   );
 }
 
-export function formatDemoDate(value: string, includeTime = false): string {
+export function formatDate(value: string, includeTime = false): string {
   const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
   const date = dateOnly ? new Date(`${value}T00:00:00Z`) : new Date(value);
   if (!Number.isFinite(date.getTime())) return "Date unavailable";
@@ -56,7 +56,7 @@ export function nextRecommendedAction(c: Case): string {
     case "submitted":
       return "Record a response or update when one is received.";
     case "awaiting_response":
-      return "Check for an update; dates shown here are demo reminders only.";
+      return "Check for an update; dates shown here are reminders only.";
     case "responded":
       return "Review the response and choose whether to close or seek a next step.";
     case "deadline_breached":
@@ -64,11 +64,11 @@ export function nextRecommendedAction(c: Case): string {
     case "escalation_draft_ready":
       return "Review the escalation draft and approve it only if appropriate.";
     case "escalated":
-      return "Track updates; this demo status does not mean anything was filed.";
+      return "Track updates; this status does not mean anything was filed.";
     case "routed_legal_aid":
       return "Contact the relevant legal-aid office independently to confirm options.";
     case "closed":
-      return "This case is closed in the demo.";
+      return "This case is marked closed in this browser session.";
   }
 }
 

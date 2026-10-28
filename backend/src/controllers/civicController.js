@@ -2,10 +2,7 @@ import mongoose from "mongoose";
 import { z } from "zod";
 import CivicComplaint from "../models/CivicComplaint.js";
 import Case from "../models/Case.js";
-import {
-  getAuthoritySuggestion,
-  groupPotentialDuplicates,
-} from "../services/civicService.js";
+import { getAuthoritySuggestion, groupPotentialDuplicates } from "../services/civicService.js";
 
 const categories = ["POTHOLES", "GARBAGE", "STREETLIGHTS", "DRAINAGE", "WATER_SUPPLY"];
 const statuses = ["DRAFT", "OPEN", "IN_PROGRESS", "WAITING_FOR_RESPONSE", "RESOLVED", "CLOSED"];
@@ -46,7 +43,11 @@ const imageSchema = z
       .refine((value) => !/[\\/]/.test(value), "Filename must not contain a path")
       .optional(),
     mimeType: z.enum(["image/jpeg", "image/png", "image/webp", "image/gif"]),
-    sizeBytes: z.number().int().min(1).max(10 * 1024 * 1024),
+    sizeBytes: z
+      .number()
+      .int()
+      .min(1)
+      .max(10 * 1024 * 1024),
     storageProvider: z.enum(["LOCAL", "S3", "GCS", "AZURE", "OTHER"]).optional(),
     storageKey: z.string().trim().min(1).max(1024).optional(),
   })

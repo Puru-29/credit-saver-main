@@ -7,9 +7,9 @@ export const Route = createFileRoute("/_app/rti")({
   head: () => ({
     meta: [
       { title: "RTI Assistant — NyaySetu" },
-      { name: "description", content: "Prepare a sample RTI application step by step." },
+      { name: "description", content: "Prepare an RTI application draft step by step." },
       { property: "og:title", content: "RTI Assistant — NyaySetu" },
-      { property: "og:description", content: "Prepare a sample RTI application step by step." },
+      { property: "og:description", content: "Prepare an RTI application draft step by step." },
     ],
   }),
   component: RtiPage,
@@ -28,7 +28,7 @@ const questions: Question[] = [
     id: "authority",
     type: "choice",
     prompt: "Which public office holds this information?",
-    hint: "Simulated suggestions from demo data — confirm or change.",
+    hint: "Example office names are not verified. Confirm the correct office through an official source.",
     options: [
       ...authorities().map((a) => ({
         value: a.id,
@@ -77,7 +77,7 @@ const officeName = (a: Answers) =>
     : (authorities().find((x) => x.id === a["authority"])?.name ?? "");
 
 function buildRti(a: Answers) {
-  return `[DEMO TEMPLATE — NOT LEGALLY VERIFIED]
+  return `[DRAFT TEMPLATE — NOT LEGALLY VERIFIED]
 
 To,
 The Public Information Officer
@@ -112,14 +112,14 @@ function RtiPage() {
     <>
       <PageHeader
         title="RTI Assistant"
-        description="Answer a few short questions. We'll prepare a sample application for you to review."
+        description="Answer a few short questions to prepare an application draft. Saved case previews remain in this browser session."
       />
       <GuidedFlow
         storageKey="nyaysetu.draft.rti"
         initialAnswerId="info"
         questions={questions}
         buildDocument={buildRti}
-        documentTitle="Sample RTI Application"
+        documentTitle="RTI Application Draft"
         onCreateCase={(a, documentContent) =>
           createCase({
             type: "rti",

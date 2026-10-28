@@ -9,7 +9,7 @@ async function startServer() {
 
   try {
     const config = loadConfig();
-    await connectDatabase(config.mongoUri);
+    await connectDatabase(config.mongoUri, config.mongoDnsServers);
 
     const { createApp } = await import("./app.js");
     const app = createApp(config);
@@ -38,7 +38,7 @@ async function startServer() {
         console.error(`Failed to shut down NyaySetu API: ${error.message}`);
         process.exitCode = 1;
       }
-    }
+    };
 
     process.once("SIGINT", () => void shutdown("SIGINT"));
     process.once("SIGTERM", () => void shutdown("SIGTERM"));

@@ -30,8 +30,7 @@ function makeModels({ deadline, caseRecord, complaint } = {}) {
           (candidate) =>
             candidate._id === filter._id &&
             candidate.user === filter.user &&
-            candidate.monitoring?.nextStepKey !==
-              filter["monitoring.nextStepKey"]?.$ne,
+            candidate.monitoring?.nextStepKey !== filter["monitoring.nextStepKey"]?.$ne,
         );
         if (!item) return { matchedCount: 0, modifiedCount: 0 };
         for (const [path, value] of Object.entries(update.$set || {})) {
@@ -44,11 +43,13 @@ function makeModels({ deadline, caseRecord, complaint } = {}) {
     },
     Case: {
       async findOne(filter) {
-        return state.cases.find((item) => {
-          if (item.user !== filter.user) return false;
-          if (filter.systemKey) return item.systemKey === filter.systemKey;
-          return item._id === filter._id;
-        }) || null;
+        return (
+          state.cases.find((item) => {
+            if (item.user !== filter.user) return false;
+            if (filter.systemKey) return item.systemKey === filter.systemKey;
+            return item._id === filter._id;
+          }) || null
+        );
       },
       async create(record) {
         const created = {
@@ -87,9 +88,10 @@ function makeModels({ deadline, caseRecord, complaint } = {}) {
     },
     CivicComplaint: {
       async findOne(filter) {
-        return state.complaints.find(
-          (item) => item.user === filter.user && item.case === filter.case,
-        ) || null;
+        return (
+          state.complaints.find((item) => item.user === filter.user && item.case === filter.case) ||
+          null
+        );
       },
     },
     RtiDraft: {

@@ -102,8 +102,7 @@ test("rejects malformed or out-of-scope ML responses", async () => {
   });
   const unknownCandidateService = createMlService({
     getServiceUrl: () => serviceUrl,
-    fetchImpl: async () =>
-      jsonResponse({ matches: [{ candidateIndex: 1, similarity: 0.95 }] }),
+    fetchImpl: async () => jsonResponse({ matches: [{ candidateIndex: 1, similarity: 0.95 }] }),
   });
   const input = {
     complaint: {
@@ -119,12 +118,17 @@ test("rejects malformed or out-of-scope ML responses", async () => {
   };
 
   assert.equal(
-    (await invalidShapeService.classifyCivicComplaint({
-      description: "There is a large pothole on the road near the local library.",
-    })).reason,
+    (
+      await invalidShapeService.classifyCivicComplaint({
+        description: "There is a large pothole on the road near the local library.",
+      })
+    ).reason,
     "invalid_response",
   );
-  assert.equal((await unknownCandidateService.findSimilarComplaints(input)).reason, "invalid_response");
+  assert.equal(
+    (await unknownCandidateService.findSimilarComplaints(input)).reason,
+    "invalid_response",
+  );
 });
 
 test("sends rounded duplicate-location coordinates and rejects URL-based image references", async () => {

@@ -61,6 +61,7 @@ const rtiDraftSchema = new Schema(
       index: true,
     },
     case: { type: Schema.Types.ObjectId, ref: "Case", default: null },
+    parentDraft: { type: Schema.Types.ObjectId, ref: "RtiDraft", default: null },
     kind: {
       type: String,
       enum: ["APPLICATION", "FIRST_APPEAL", "ACTION_TAKEN_REQUEST"],
@@ -101,5 +102,6 @@ const rtiDraftSchema = new Schema(
 rtiDraftSchema.index({ user: 1, updatedAt: -1 });
 rtiDraftSchema.index({ user: 1, status: 1, createdAt: -1 });
 rtiDraftSchema.index({ case: 1 });
+rtiDraftSchema.index({ user: 1, parentDraft: 1 });
 
 export default mongoose.models.RtiDraft || mongoose.model("RtiDraft", rtiDraftSchema);

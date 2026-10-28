@@ -4,7 +4,12 @@ import { z } from "zod";
 import User from "../models/User.js";
 
 const credentialsSchema = z.object({
-  email: z.string().trim().email().max(254).transform((email) => email.toLowerCase()),
+  email: z
+    .string()
+    .trim()
+    .email()
+    .max(254)
+    .transform((email) => email.toLowerCase()),
   password: z
     .string()
     .min(8)
@@ -16,6 +21,12 @@ const credentialsSchema = z.object({
 const registrationSchema = credentialsSchema.extend({
   name: z.string().trim().min(2).max(100),
 });
+
+const profileUpdateSchema = z
+  .object({
+    name: z.string().trim().min(2).max(100),
+  })
+  .strict();
 
 function validateBody(schema, body, res) {
   const result = schema.safeParse(body);
@@ -98,6 +109,24 @@ export function createAuthController(config) {
       }
 
       return res.status(200).json({ message: "Authenticated user", user: safeUser(user) });
+    },
+
+    async updateCurrentUser(req, res) {
+      const input = validateBody(profileUpdateSchema, req.body, res);
+      if (!input) return;
+
+      const user = await User.findById(req.auth.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      user.name = input.name;
+      await user.save();
+
+      return res.status(200).json({
+        message: "Profile updated",
+        user: safeUser(user),
+      });
     },
   };
 }

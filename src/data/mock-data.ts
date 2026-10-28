@@ -9,7 +9,7 @@ import type {
   User,
 } from "@/types";
 
-// Fictional seed data only. Single source of truth for the demo.
+// Fictional seed data used only for local preview and automated tests.
 export const mockUsers: User[] = [
   {
     id: "usr_001",
@@ -156,19 +156,19 @@ export const mockDeadlines: Deadline[] = [
   {
     id: "dl_101",
     caseId: "case_101",
-    label: "Demo reply-window marker",
+    label: "Simulated reply-window marker",
     dueDate: "2026-10-22",
-    demoOffsetDays: 30,
+    suggestedOffsetDays: 30,
     met: null,
     source: "simulated",
-    sourceLabel: "Simulated demo date — not a verified legal deadline",
+    sourceLabel: "Simulated date — not a verified legal deadline",
   },
   {
     id: "dl_105",
     caseId: "case_105",
-    label: "Suggested demo review date",
+    label: "Suggested review date",
     dueDate: "2026-11-02",
-    demoOffsetDays: 15,
+    suggestedOffsetDays: 15,
     met: null,
     source: "simulated",
     sourceLabel: "Suggested date for this prototype only",
@@ -178,7 +178,7 @@ export const mockDeadlines: Deadline[] = [
     caseId: "case_106",
     label: "Suggested follow-up date",
     dueDate: "2026-11-10",
-    demoOffsetDays: 21,
+    suggestedOffsetDays: 21,
     met: null,
     source: "simulated",
     sourceLabel: "Suggested date for this prototype only",
@@ -186,12 +186,12 @@ export const mockDeadlines: Deadline[] = [
   {
     id: "dl_102",
     caseId: "case_102",
-    label: "Demo grievance-window marker",
+    label: "Simulated grievance-window marker",
     dueDate: "2026-10-01",
-    demoOffsetDays: 30,
+    suggestedOffsetDays: 30,
     met: false,
     source: "simulated",
-    sourceLabel: "Simulated demo date — not a verified legal deadline",
+    sourceLabel: "Simulated date — not a verified legal deadline",
   },
 ];
 
@@ -204,11 +204,11 @@ export const mockDocuments: Document[] = [
     createdAt: "2026-09-20",
     status: "final",
     content:
-      "Subject: Road repair expenditure, Ward 150\n\nPlease share copies of records showing the amounts sanctioned and spent on road repairs in Ward 150 during 2025–26.\n\nApplicant: [Add your name and contact details]\nDate: [Add date]\n\n[DEMO TEMPLATE — review and verify all requirements before use.]",
+      "Subject: Road repair expenditure, Ward 150\n\nPlease share copies of records showing the amounts sanctioned and spent on road repairs in 2025–26.\n\nApplicant: [Add your name and contact details]\nDate: [Add date]\n\n[LOCAL DRAFT TEMPLATE — review and verify all requirements before use.]",
     plainLanguageContent:
       "Please share the records showing how much money was approved and spent on road repairs in Ward 150 during 2025–26.",
-    citations: [{ label: "Official source reference not verified in this demo", verified: false }],
-    demoSourcePlaceholder: "Demo source placeholder — no legal citation has been verified.",
+    citations: [{ label: "Official source reference not verified", verified: false }],
+    sourcePlaceholder: "No legal citation has been verified.",
     versions: [
       {
         id: "ver_101_1",
@@ -226,10 +226,10 @@ export const mockDocuments: Document[] = [
     createdAt: "2026-10-05",
     status: "draft",
     content:
-      "Subject: Request to review unresolved streetlight report\n\nI reported non-functioning streetlights on 4th Cross. The issue remains unresolved according to my records.\n\nPlease review the report and share any action taken or the next steps.\n\n[DEMO DRAFT — not submitted. Add accurate dates and evidence before use.]",
+      "Subject: Request to review unresolved streetlight report\n\nI reported non-functioning streetlights on 4th Cross. The issue remains unresolved according to my records.\n\nPlease review the report and share any action taken or the next steps.\n\n[LOCAL DRAFT PREVIEW — not submitted. Add accurate dates and evidence before use.]",
     plainLanguageContent:
       "The streetlights on 4th Cross are still not working. Please check the earlier report and let me know what action has been taken.",
-    demoSourcePlaceholder: "Demo source placeholder — no legal citation has been verified.",
+    sourcePlaceholder: "No legal citation has been verified.",
     versions: [
       {
         id: "ver_102_1",
@@ -247,13 +247,13 @@ export const mockDocuments: Document[] = [
     createdAt: "2026-10-25",
     status: "draft",
     content:
-      "Subject: Status of ration card application\n\nPlease share the current status of my ration card application submitted in May, along with a copy of any recorded action or outstanding requirements.\n\nApplicant: [Add your name and contact details]\nDate: [Add date]\n\n[DEMO TEMPLATE — review and verify all requirements before use.]",
+      "Subject: Status of ration card application\n\nPlease share the current status of my ration card application submitted in May, along with a copy of any recorded action or outstanding requirements.\n\nApplicant: [Add your name and contact details]\nDate: [Add date]\n\n[LOCAL DRAFT TEMPLATE — review and verify all requirements before use.]",
     formalContent:
-      "To the concerned public office,\n\nSubject: Request for application status information\n\nPlease provide the current status of my ration card application submitted in May and copies of records showing action taken or any outstanding requirements.\n\nApplicant: [Add your name and contact details]\nDate: [Add date]\n\n[DEMO TEMPLATE — review and verify all requirements before use.]",
+      "To the concerned public office,\n\nSubject: Request for application status information\n\nPlease provide the current status of my ration card application submitted in May and copies of records showing action taken or any outstanding requirements.\n\nApplicant: [Add your name and contact details]\nDate: [Add date]\n\n[LOCAL DRAFT TEMPLATE — review and verify all requirements before use.]",
     plainLanguageContent:
       "Please tell me what is happening with my ration card application submitted in May and whether you need anything else from me.",
-    citations: [{ label: "Official source reference not verified in this demo", verified: false }],
-    demoSourcePlaceholder: "Demo source placeholder — no legal citation has been verified.",
+    citations: [{ label: "Official source reference not verified", verified: false }],
+    sourcePlaceholder: "No legal citation has been verified.",
     versions: [
       {
         id: "ver_104_1",
@@ -271,12 +271,11 @@ export const mockDocuments: Document[] = [
     createdAt: "2026-10-18",
     status: "draft",
     content:
-      "Subject: Request for an update on missed waste collection\n\nPlease review my earlier report about missed waste collection in HSR Sector 2 and share the current status and any action taken.\n\n[DEMO DRAFT — review facts and authority details before use. Not submitted.]",
+      "Subject: Request for an update on missed waste collection\n\nPlease review my earlier report about missed waste collection in HSR Sector 2 and share the current status and any action taken.\n\n[LOCAL DRAFT PREVIEW — review facts and authority details before use. Not submitted.]",
     plainLanguageContent:
       "Please let me know whether action has been taken on the missed waste collection report in HSR Sector 2.",
-    demoSourcePlaceholder:
-      "Demo source placeholder — no official process or legal citation has been verified.",
-    citations: [{ label: "No verified source attached to this sample", verified: false }],
+    sourcePlaceholder: "No official process or legal citation has been verified.",
+    citations: [{ label: "No verified source attached to this document", verified: false }],
     versions: [
       {
         id: "ver_105_1",
@@ -308,7 +307,7 @@ export const mockEscalations: Escalation[] = [
     status: "draft",
     documentId: "doc_102",
     draftContent:
-      "Sample request to review the unresolved streetlight report and share action taken. Demo draft only — verify details before use.",
+      "Sample request to review the unresolved streetlight report and share action taken. Verify details before use.",
   },
   {
     id: "esc_105",
@@ -319,7 +318,7 @@ export const mockEscalations: Escalation[] = [
     status: "draft",
     documentId: "doc_105",
     draftContent:
-      "Sample request to review the missed waste collection report and share any action taken. Demo draft only — confirm the responsible office and details before use.",
+      "Sample request to review the missed waste collection report and share any action taken. Confirm the responsible office and details before use.",
   },
 ];
 

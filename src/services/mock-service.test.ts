@@ -32,11 +32,9 @@ describe("mock case-management workflows", () => {
     const escalation = (await caseService.escalations(id))[0];
     expect(escalation?.level).toBe("first_appeal");
     expect(
-      (await caseService.events(id)).some(
-        (event) => event.title === "Simulated deadline breach — demo only",
-      ),
+      (await caseService.events(id)).some((event) => event.title === "Simulated deadline breach"),
     ).toBe(true);
-    if (!escalation) throw new Error("The demo escalation was not created");
+    if (!escalation) throw new Error("The escalation draft was not created");
     caseService.approveEscalation(escalation.id);
     expect((await caseService.get(id))?.status).toBe("deadline_breached");
     expect((await caseService.escalations(id))[0]?.status).toBe("approved");
@@ -83,20 +81,20 @@ describe("mock case-management workflows", () => {
       documentTitle: "Reviewed draft",
       documentKind: "application",
       dueInDays: 30,
-      documentContent: "User-reviewed demo content",
+      documentContent: "User-reviewed sample content",
     });
     const doc = (await documentService.list()).find((item) => item.caseId === id);
-    expect(doc?.content).toBe("User-reviewed demo content");
-    expect(doc?.versions?.[0]?.content).toBe("User-reviewed demo content");
+    expect(doc?.content).toBe("User-reviewed sample content");
+    expect(doc?.versions?.[0]?.content).toBe("User-reviewed sample content");
   });
 
-  it("requires a reviewed, locally approved escalation before the demo Escalated status", async () => {
+  it("requires a reviewed, locally approved escalation before the Escalated status", async () => {
     const id = makeCase("rti");
     caseService.simulateDeadlineBreach(id);
     caseService.transition(id, "escalation_draft_ready");
     expect(() => caseService.transition(id, "escalated")).toThrow("approve an escalation draft");
     const escalation = (await caseService.escalations(id))[0];
-    if (!escalation) throw new Error("The demo escalation was not created");
+    if (!escalation) throw new Error("The escalation draft was not created");
     caseService.approveEscalation(escalation.id);
     caseService.transition(id, "escalated");
     expect((await caseService.get(id))?.status).toBe("escalated");

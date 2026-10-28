@@ -1,9 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
-  CRON_EXPRESSION,
-  startDeadlineMonitoringJob,
-} from "./deadlineMonitoringJob.js";
+import { CRON_EXPRESSION, startDeadlineMonitoringJob } from "./deadlineMonitoringJob.js";
 
 test("schedules hourly in UTC, prevents overlapping runs, and stops cleanly", async () => {
   let scheduledExpression;
@@ -22,7 +19,11 @@ test("schedules hourly in UTC, prevents overlapping runs, and stops cleanly", as
       scheduledExpression = expression;
       scheduledCallback = callback;
       scheduledOptions = options;
-      return { stop() { stopped = true; } };
+      return {
+        stop() {
+          stopped = true;
+        },
+      };
     },
     async monitor() {
       monitorCalls += 1;

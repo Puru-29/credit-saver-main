@@ -14,7 +14,7 @@ import {
   CASE_TYPE_LABEL,
   deadlineCountdownLabel,
   daysUntil,
-  formatDemoDate,
+  formatDate,
   isValidDeadline,
   nextRecommendedAction,
 } from "@/lib/case-utils";
@@ -25,9 +25,9 @@ export const Route = createFileRoute("/_app/cases/")({
   head: () => ({
     meta: [
       { title: "My Cases — NyaySetu" },
-      { name: "description", content: "Search and manage your demo cases." },
+      { name: "description", content: "Search and manage your cases." },
       { property: "og:title", content: "My Cases — NyaySetu" },
-      { property: "og:description", content: "Search and manage your demo cases." },
+      { property: "og:description", content: "Search and manage your cases." },
     ],
   }),
   loader: async () => {
@@ -54,7 +54,7 @@ function CasesPage() {
   const withDeadline = cases.map((c) => ({
     c,
     deadline: deadlines
-      .filter((d) => d.caseId === c.id && isValidDeadline(d))
+      .filter((d) => d.caseId === c.id && d.source === "verified" && isValidDeadline(d))
       .sort((a, b) => a.dueDate.localeCompare(b.dueDate))[0],
   }));
   const filtered = withDeadline
@@ -89,7 +89,7 @@ function CasesPage() {
     <>
       <PageHeader
         title="My Cases"
-        description="Search, filter and review your cases. Dates in this demo are not filing advice."
+        description="Search and review case previews stored in this browser session. Dates are shown only when their source is verified."
         actions={
           <Button asChild>
             <Link to="/new-case">Create case</Link>
@@ -147,8 +147,8 @@ function CasesPage() {
             >
               <option value="all">Any deadline</option>
               <option value="upcoming">Upcoming or today</option>
-              <option value="past">Past demo date</option>
-              <option value="has_date">Has a demo date</option>
+              <option value="past">Past verified date</option>
+              <option value="has_date">Has a verified date</option>
               <option value="none">No valid date</option>
             </select>
           </label>
@@ -180,7 +180,7 @@ function CasesPage() {
               <option value="updated_desc">Recently updated</option>
               <option value="created_desc">Newest created</option>
               <option value="created_asc">Oldest created</option>
-              <option value="deadline_asc">Nearest demo date</option>
+              <option value="deadline_asc">Nearest verified date</option>
               <option value="title_asc">Issue name</option>
             </select>
           </label>
@@ -195,7 +195,7 @@ function CasesPage() {
           title={cases.length === 0 ? "No cases yet" : "No matching cases"}
           description={
             cases.length === 0
-              ? "Create a demo case to see its status, timeline and documents here."
+              ? "Create a case to see its status, timeline and documents here."
               : "Try changing the search or filters to find a case."
           }
           action={
@@ -225,21 +225,21 @@ function CasesPage() {
                       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                         <span>{CASE_TYPE_LABEL[c.type]}</span>
                         <span>{authority?.name ?? "Authority not set"}</span>
-                        <span>Created {formatDemoDate(c.createdAt)}</span>
+                        <span>Created {formatDate(c.createdAt)}</span>
                       </div>
                     </div>
                     <div className="space-y-2 lg:max-w-xs lg:text-right">
                       {deadline && days !== null ? (
                         <div className="text-sm">
                           <p className="font-medium">
-                            {deadline.label} · {formatDemoDate(deadline.dueDate)}
+                            {deadline.label} · {formatDate(deadline.dueDate)}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {deadlineCountdownLabel(days)} · {deadline.sourceLabel}
                           </p>
                         </div>
                       ) : (
-                        <p className="text-xs text-muted-foreground">No valid demo deadline</p>
+                        <p className="text-xs text-muted-foreground">No verified date</p>
                       )}
                       <p className="text-sm">
                         <span className="font-medium">Next action: </span>

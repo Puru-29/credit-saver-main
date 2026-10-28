@@ -75,10 +75,10 @@ export const caseService = {
     appendEvent(
       escalation.caseId,
       "escalation",
-      "Demo escalation draft approved locally — not submitted",
+      "Escalation draft review recorded in this browser session — not submitted",
     );
     appendNotification({
-      title: "Escalation draft approved in demo",
+      title: "Escalation draft review recorded",
       body: "Local approval only. Nothing was filed, sent or submitted.",
       caseId: escalation.caseId,
       category: "escalation",
@@ -97,7 +97,7 @@ export const caseService = {
     const c = db.mockCases.find((item) => item.id === id);
     if (!c) throw new Error(`Case ${id} was not found`);
     Object.assign(c, patch, { updatedAt: today() });
-    appendEvent(id, "note", "Case details updated in demo");
+    appendEvent(id, "note", "Case preview details updated");
     return c;
   },
   transition: (id: string, status: CaseStatus) => {
@@ -109,14 +109,12 @@ export const caseService = {
       status === "escalation_draft_ready" &&
       !db.mockEscalations.some((item) => item.caseId === id && item.status === "draft")
     )
-      throw new Error("Create a demo escalation draft before changing this case status");
+      throw new Error("Create an escalation draft preview before changing this case status");
     if (
       status === "escalated" &&
       !db.mockEscalations.some((item) => item.caseId === id && item.status === "approved")
     )
-      throw new Error(
-        "Review and locally approve an escalation draft before changing this demo status",
-      );
+      throw new Error("Review and locally approve an escalation draft before changing this status");
     const previousStatus = c.status;
     c.status = status;
     c.updatedAt = today();
@@ -128,7 +126,7 @@ export const caseService = {
     if (status === "responded")
       appendNotification({
         title: `Response update: ${c.title}`,
-        body: "A response was recorded in the demo case. Review its details.",
+        body: "A response update was recorded in this browser session. Review its details.",
         caseId: id,
         category: "response",
       });
@@ -147,7 +145,7 @@ export const caseService = {
     const c = db.mockCases.find((item) => item.id === id);
     if (!c) throw new Error(`Case ${id} was not found`);
     if (!caseService.canSimulateBreach(c))
-      throw new Error("This case is not eligible for the demo deadline-breach simulation");
+      throw new Error("This case is not eligible for deadline-breach simulation");
 
     const stamp = today();
     const simulatedDueDate = dateOffset(-1);
@@ -156,17 +154,17 @@ export const caseService = {
       deadline.met = false;
       deadline.dueDate = simulatedDueDate;
       deadline.source = "simulated";
-      deadline.sourceLabel = "Adjusted by the demo breach simulator — not a legal deadline";
+      deadline.sourceLabel = "Adjusted by a simulator — not a legal deadline";
     } else
       db.mockDeadlines.push({
         id: `dl_${++seq}`,
         caseId: id,
-        label: "Simulated deadline breach marker",
+        label: "Simulated deadline marker",
         dueDate: simulatedDueDate,
-        demoOffsetDays: 0,
+        suggestedOffsetDays: 0,
         met: false,
         source: "simulated",
-        sourceLabel: "Created by the demo breach simulator — not a legal deadline",
+        sourceLabel: "Created by a simulator — not a legal deadline",
       });
 
     const level: Escalation["level"] =
@@ -183,10 +181,10 @@ export const caseService = {
           : "Suggested next-step draft";
     const body =
       c.type === "rti"
-        ? `Subject: Sample first appeal regarding ${c.title}\n\nI am requesting a review of the response status for my information request. Please review the request and provide a response or explain the current status.\n\n[DEMO DRAFT — not submitted. Confirm dates, authority and applicable requirements with an official source before use.]`
+        ? `Subject: Sample first appeal regarding ${c.title}\n\nI am requesting a review of the response status for my information request. Please review the request and provide a response or explain the current status.\n\n[LOCAL DRAFT PREVIEW — not submitted. Confirm dates, authority and applicable requirements with an official source before use.]`
         : c.type === "civic_fix"
-          ? `Subject: Request for an update on ${c.title}\n\nPlease review my earlier civic issue report and share what action, if any, has been taken, along with the current status.\n\n[DEMO DRAFT — not submitted. Confirm the office and details before use.]`
-          : `Subject: Suggested next step regarding ${c.title}\n\nI am seeking a written update about the unresolved issue described in my case. Please review the matter and share the next steps available.\n\n[DEMO DRAFT — review with a qualified advisor where appropriate. Not submitted.]`;
+          ? `Subject: Request for an update on ${c.title}\n\nPlease review my earlier civic issue report and share what action, if any, has been taken, along with the current status.\n\n[LOCAL DRAFT PREVIEW — not submitted. Confirm the office and details before use.]`
+          : `Subject: Suggested next step regarding ${c.title}\n\nI am seeking a written update about the unresolved issue described in my case. Please review the matter and share the next steps available.\n\n[LOCAL DRAFT PREVIEW — review with a qualified advisor where appropriate. Not submitted.]`;
 
     c.status = "deadline_breached";
     c.updatedAt = stamp;
@@ -215,25 +213,22 @@ export const caseService = {
           : c.type === "civic_fix"
             ? "A sample request asking what action has been taken on the civic issue."
             : "A suggested sample note asking about next steps for the unresolved issue.",
-      demoSourcePlaceholder:
-        "Demo source placeholder — no legal citation or verified source has been added.",
-      citations: [
-        { label: "No verified legal source attached to this demo draft", verified: false },
-      ],
+      sourcePlaceholder: "No legal citation or verified source has been added.",
+      citations: [{ label: "No verified legal source attached to this draft", verified: false }],
       versions: [
         {
           id: `ver_${++seq}`,
           savedAt: stamp,
           content: body,
-          note: "Demo escalation draft created",
+          note: "Escalation draft preview created",
         },
       ],
     });
-    appendEvent(id, "deadline", "Simulated deadline breach — demo only");
+    appendEvent(id, "deadline", "Simulated deadline breach");
     appendEvent(id, "escalation", `${title} prepared for explicit review`);
     appendNotification({
       title: `Escalation draft awaiting review: ${c.title}`,
-      body: "A demo-only escalation draft is ready. Review it before any action; nothing has been submitted.",
+      body: "An escalation draft preview is ready. Review it before any action; nothing has been submitted.",
       caseId: id,
       category: "escalation",
     });
@@ -242,15 +237,15 @@ export const caseService = {
   createRelatedRti: (parentId: string) => {
     const parent = db.mockCases.find((item) => item.id === parentId);
     if (!parent || parent.type !== "civic_fix" || ["closed", "responded"].includes(parent.status)) {
-      throw new Error("Only an unresolved Civic Fix case can create a related demo RTI case");
+      throw new Error("Only an unresolved Civic Fix case can create a related RTI case preview");
     }
     if (db.mockCases.some((item) => item.parentCaseId === parentId && item.type === "rti")) {
-      throw new Error("A related demo RTI case already exists for this Civic Fix case");
+      throw new Error("A related RTI case preview already exists for this Civic Fix case");
     }
     const id = `case_${++seq}`;
     const stamp = today();
     const title = `Action taken information — ${parent.title}`;
-    const summary = `Related demo RTI case requesting action-taken information about parent Civic Fix case ${parent.id}.`;
+    const summary = `Related RTI case preview requesting action-taken information about parent Civic Fix case ${parent.id}.`;
     db.mockCases.unshift({
       id,
       userId: parent.userId,
@@ -270,30 +265,28 @@ export const caseService = {
       kind: "application",
       createdAt: stamp,
       status: "draft",
-      content: `Subject: Information about action taken on ${parent.title}\n\nPlease share records showing the status and action taken on civic issue case ${parent.id} concerning: ${parent.summary}\n\n[DEMO WORKFLOW — this is an editable sample draft only. It has not been submitted.]`,
+      content: `Subject: Information about action taken on ${parent.title}\n\nPlease share records showing the status and action taken on civic issue case ${parent.id} concerning: ${parent.summary}\n\n[LOCAL WORKFLOW PREVIEW — editable draft only. It has not been submitted.]`,
       plainLanguageContent: `Please share records showing whether action was taken on the civic issue in related case ${parent.id}.`,
-      demoSourcePlaceholder: "Demo source placeholder — verify official requirements before use.",
-      citations: [
-        { label: "Official source reference not verified in this demo", verified: false },
-      ],
+      sourcePlaceholder: "Verify official requirements before use; no source is verified.",
+      citations: [{ label: "Official source reference not verified", verified: false }],
       versions: [
         {
           id: `ver_${++seq}`,
           savedAt: stamp,
-          content: "Initial related demo RTI draft.",
+          content: "Initial related RTI draft preview.",
           note: "Created from Civic Fix case",
         },
       ],
     });
-    appendEvent(id, "created", `Related demo RTI case created from ${parent.id}`);
+    appendEvent(id, "created", `Related RTI case preview created from ${parent.id}`);
     appendEvent(
       parent.id,
       "note",
-      `Related demo RTI case ${id} created for action-taken information`,
+      `Related RTI case preview ${id} created for action-taken information`,
     );
     appendNotification({
       title: `Related RTI draft created: ${parent.title}`,
-      body: "Review the linked action-taken information request. It is a demo draft and was not submitted.",
+      body: "Review the linked action-taken information request. It is a local draft preview and was not submitted.",
       caseId: id,
       category: "draft",
     });
@@ -326,7 +319,7 @@ export const documentService = {
     appendEvent(d.caseId, "document", `Document draft saved: ${d.title}`);
     appendNotification({
       title: `Draft saved: ${d.title}`,
-      body: "Your changes are saved in this demo session.",
+      body: "Your changes are saved in this browser session only.",
       caseId: d.caseId,
       category: "draft",
     });
@@ -344,11 +337,11 @@ export const authorityService = {
       (authority) => authority.name.toLowerCase() === trimmed.toLowerCase(),
     );
     if (existing) return existing.id;
-    const id = `auth_demo_${++seq}`;
+    const id = `auth_local_${++seq}`;
     db.mockAuthorities.push({
       id,
       name: trimmed,
-      department: "Manually entered — demo only",
+      department: "Manually entered — not verified",
       jurisdiction: "Not verified",
     });
     return id;
@@ -378,7 +371,7 @@ export const notificationService = {
         const c = db.mockCases.find((item) => item.id === deadline.caseId);
         if (c)
           ensure(`auto_deadline_${deadline.id}`, {
-            title: `Upcoming demo date: ${c.title}`,
+            title: `Upcoming date: ${c.title}`,
             body: `${deadline.label} is marked for ${deadline.dueDate}. This is a simulated reminder, not a verified filing deadline.`,
             caseId: c.id,
             category: "deadline",
@@ -433,13 +426,13 @@ export function createCase(input: {
   if (!db.mockAuthorities.some((authority) => authority.id === input.authorityId))
     throw new Error("Choose a valid authority before creating the case");
   if (!Number.isInteger(input.dueInDays) || input.dueInDays < 0 || input.dueInDays > 3650)
-    throw new Error("The suggested demo follow-up offset must be between 0 and 3650 days");
+    throw new Error("The suggested follow-up offset must be between 0 and 3650 days");
   const id = `case_${++seq}`;
   const stamp = today();
   const due = dateOffset(input.dueInDays);
   const documentContent =
     input.documentContent ??
-    "[DEMO TEMPLATE — edit this document and review all details before use.]\n\n[Add your information here.]";
+    "[LOCAL DRAFT TEMPLATE — edit this document and review all details before use.]\n\n[Add your information here.]";
   db.mockCases.unshift({
     id,
     userId: "usr_001",
@@ -460,8 +453,8 @@ export function createCase(input: {
     status: "draft",
     content: documentContent,
     plainLanguageContent: "[Plain-language summary for review.]",
-    demoSourcePlaceholder: "Demo source placeholder — no legal citation has been verified.",
-    citations: [{ label: "Official source reference not verified in this demo", verified: false }],
+    sourcePlaceholder: "No legal citation has been verified.",
+    citations: [{ label: "Official source reference not verified", verified: false }],
     versions: [
       {
         id: `ver_${++seq}`,
@@ -476,10 +469,10 @@ export function createCase(input: {
     caseId: id,
     label: "Suggested follow-up date",
     dueDate: due,
-    demoOffsetDays: input.dueInDays,
+    suggestedOffsetDays: input.dueInDays,
     met: null,
     source: "simulated",
-    sourceLabel: "Suggested demo date only — not a verified legal deadline",
+    sourceLabel: "Suggested date only — not a verified legal deadline",
   });
   appendEvent(id, "created", "Draft created — awaiting your review");
   if (input.evidenceFileName) {

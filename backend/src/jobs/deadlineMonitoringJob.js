@@ -55,9 +55,13 @@ export function startDeadlineMonitoringJob({
     return inFlight;
   };
 
-  const task = schedule(CRON_EXPRESSION, () => {
-    void runOnce();
-  }, { timezone: "UTC" });
+  const task = schedule(
+    CRON_EXPRESSION,
+    () => {
+      void runOnce();
+    },
+    { timezone: "UTC" },
+  );
   activeJob = {
     runNow: runOnce,
     async stop() {

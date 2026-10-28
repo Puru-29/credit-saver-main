@@ -1,8 +1,5 @@
 import { generateFormalLetter } from "../services/rightsService.js";
-import {
-  generateFirstAppealDraft,
-  generateRtiApplication,
-} from "../services/rtiService.js";
+import { generateFirstAppealDraft, generateRtiApplication } from "../services/rtiService.js";
 
 const civicCategoryLabels = Object.freeze({
   POTHOLES: "Potholes",

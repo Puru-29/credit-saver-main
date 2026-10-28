@@ -11,16 +11,13 @@ import {
 
 const dateTimeInput = z.string().datetime({ offset: true });
 
-const dateInput = z.string().refine(
-  (value) => {
-    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-      const date = new Date(`${value}T00:00:00.000Z`);
-      return !Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === value;
-    }
-    return dateTimeInput.safeParse(value).success;
-  },
-  "Enter a valid ISO date or date-time",
-);
+const dateInput = z.string().refine((value) => {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const date = new Date(`${value}T00:00:00.000Z`);
+    return !Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === value;
+  }
+  return dateTimeInput.safeParse(value).success;
+}, "Enter a valid ISO date or date-time");
 
 const verifiedSourceTypes = ["OFFICIAL_SOURCE", "CONFIGURED", "RULE_DERIVED"];
 
@@ -50,7 +47,8 @@ const createSchema = z
       (value.dateBasis === "USER_SUPPLIED" && value.sourceType !== "RULE_DERIVED"),
     {
       path: ["sourceDescription"],
-      message: "Date basis and source type must agree; rule-derived dates require a source description",
+      message:
+        "Date basis and source type must agree; rule-derived dates require a source description",
     },
   );
 
@@ -114,9 +112,7 @@ function parseBody(schema, body, res) {
 }
 
 function toDate(value) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value)
-    ? new Date(`${value}T00:00:00.000Z`)
-    : new Date(value);
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T00:00:00.000Z`) : new Date(value);
 }
 
 function validId(id) {

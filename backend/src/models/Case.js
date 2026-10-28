@@ -64,14 +64,7 @@ const caseSchema = new Schema(
     details: { type: String, trim: true, maxlength: 20000 },
     status: {
       type: String,
-      enum: [
-        "DRAFT",
-        "OPEN",
-        "IN_PROGRESS",
-        "WAITING_FOR_RESPONSE",
-        "RESOLVED",
-        "CLOSED",
-      ],
+      enum: ["DRAFT", "OPEN", "IN_PROGRESS", "WAITING_FOR_RESPONSE", "RESOLVED", "CLOSED"],
       required: true,
       default: "DRAFT",
       index: true,

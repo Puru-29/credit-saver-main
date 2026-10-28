@@ -136,6 +136,62 @@ test("protected endpoints reject malformed and invalid JWTs", async (t) => {
   }
 });
 
+test("profile update requires authentication and changes only the validated name", async (t) => {
+  const baseUrl = await startTestServer(t);
+  const storedUser = {
+    id: userId,
+    _id: userId,
+    name: "Original Name",
+    email: "profile@example.test",
+    passwordHash: "secret-hash-that-must-not-be-returned",
+    createdAt: new Date("2026-01-01T00:00:00.000Z"),
+    async save() {},
+  };
+  t.mock.method(User, "findById", async (id) => {
+    assert.equal(id, userId);
+    return storedUser;
+  });
+
+  const unauthenticated = await jsonRequest(baseUrl, "/api/auth/me", {
+    method: "PATCH",
+    body: { name: "Updated Test Name" },
+  });
+  assert.equal(unauthenticated.response.status, 401);
+
+  const invalid = await jsonRequest(baseUrl, "/api/auth/me", {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: { name: "A" },
+  });
+  assert.equal(invalid.response.status, 400);
+
+  const forbidden = await jsonRequest(baseUrl, "/api/auth/me", {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: { name: "Updated Test Name", role: "admin", passwordHash: "attacker-value" },
+  });
+  assert.equal(forbidden.response.status, 400);
+  assert.equal(storedUser.name, "Original Name");
+
+  let saved = false;
+  storedUser.save = async () => {
+    saved = true;
+  };
+  const updated = await jsonRequest(baseUrl, "/api/auth/me", {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: { name: "  Updated Test Name  " },
+  });
+
+  assert.equal(updated.response.status, 200);
+  assert.equal(updated.body.message, "Profile updated");
+  assert.equal(updated.body.user.name, "Updated Test Name");
+  assert.equal(updated.body.user.email, "profile@example.test");
+  assert.equal("passwordHash" in updated.body.user, false);
+  assert.equal(storedUser.name, "Updated Test Name");
+  assert.equal(saved, true);
+});
+
 test("case routes create only authenticated-user cases and validate status transitions", async (t) => {
   const baseUrl = await startTestServer(t);
   let created;
@@ -169,26 +225,18 @@ test("case routes create only authenticated-user cases and validate status trans
   assert.equal(created.status, "DRAFT");
   assert.equal("user" in creation.body.data, false);
 
-  const invalidStatus = await jsonRequest(
-    baseUrl,
-    `/api/cases/${created._id}/status`,
-    {
-      method: "PATCH",
-      headers: authHeaders(),
-      body: { status: "UNKNOWN" },
-    },
-  );
+  const invalidStatus = await jsonRequest(baseUrl, `/api/cases/${created._id}/status`, {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: { status: "UNKNOWN" },
+  });
   assert.equal(invalidStatus.response.status, 400);
 
-  const illegalTransition = await jsonRequest(
-    baseUrl,
-    `/api/cases/${created._id}/status`,
-    {
-      method: "PATCH",
-      headers: authHeaders(),
-      body: { status: "WAITING_FOR_RESPONSE" },
-    },
-  );
+  const illegalTransition = await jsonRequest(baseUrl, `/api/cases/${created._id}/status`, {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: { status: "WAITING_FOR_RESPONSE" },
+  });
   assert.equal(illegalTransition.response.status, 409);
 });
 
@@ -205,16 +253,12 @@ test("case and document reads are scoped to the authenticated owner", async (t) 
     return null;
   });
 
-  const caseResponse = await jsonRequest(
-    baseUrl,
-    "/api/cases/507f1f77bcf86cd799439012",
-    { headers: authHeaders() },
-  );
-  const documentResponse = await jsonRequest(
-    baseUrl,
-    "/api/documents/507f1f77bcf86cd799439013",
-    { headers: authHeaders() },
-  );
+  const caseResponse = await jsonRequest(baseUrl, "/api/cases/507f1f77bcf86cd799439012", {
+    headers: authHeaders(),
+  });
+  const documentResponse = await jsonRequest(baseUrl, "/api/documents/507f1f77bcf86cd799439013", {
+    headers: authHeaders(),
+  });
 
   assert.equal(caseResponse.response.status, 404);
   assert.equal(documentResponse.response.status, 404);
@@ -259,11 +303,9 @@ test("centralized error middleware returns a generic production response", async
   );
   const address = server.address();
 
-  const { response, body } = await jsonRequest(
-    `http://127.0.0.1:${address.port}`,
-    "/api/auth/me",
-    { headers: authHeaders() },
-  );
+  const { response, body } = await jsonRequest(`http://127.0.0.1:${address.port}`, "/api/auth/me", {
+    headers: authHeaders(),
+  });
 
   assert.equal(response.status, 500);
   assert.deepEqual(body, { error: "Internal Server Error" });

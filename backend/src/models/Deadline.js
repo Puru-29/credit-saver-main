@@ -62,13 +62,7 @@ const deadlineSchema = new Schema(
     },
     sourceType: {
       type: String,
-      enum: [
-        "OFFICIAL_SOURCE",
-        "CONFIGURED",
-        "RULE_DERIVED",
-        "AI_GENERATED",
-        "USER_PROVIDED",
-      ],
+      enum: ["OFFICIAL_SOURCE", "CONFIGURED", "RULE_DERIVED", "AI_GENERATED", "USER_PROVIDED"],
       required: true,
     },
     sourceDescription: { type: String, trim: true, maxlength: 1000 },

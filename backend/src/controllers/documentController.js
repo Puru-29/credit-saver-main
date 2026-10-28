@@ -139,8 +139,7 @@ function validationError(res, error) {
 }
 
 function safeDocument(document) {
-  const result =
-    typeof document.toObject === "function" ? document.toObject() : { ...document };
+  const result = typeof document.toObject === "function" ? document.toObject() : { ...document };
   delete result.user;
   delete result.__v;
   result.submissionStatus = "NOT_SUBMITTED";

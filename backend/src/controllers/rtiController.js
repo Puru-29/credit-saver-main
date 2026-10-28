@@ -1,8 +1,13 @@
 import mongoose from "mongoose";
 import { z } from "zod";
 import Case from "../models/Case.js";
+import CivicComplaint from "../models/CivicComplaint.js";
 import RtiDraft from "../models/RtiDraft.js";
-import { generateRtiApplication } from "../services/rtiService.js";
+import {
+  generateActionTakenRtiDraft,
+  generateFirstAppealDraft,
+  generateRtiApplication,
+} from "../services/rtiService.js";
 
 const dateSchema = z
   .string()
@@ -50,6 +55,15 @@ const createDraftSchema = z
     responseDeadline: responseDeadlineSchema.optional(),
   })
   .strict();
+
+const firstAppealSchema = z
+  .object({
+    grounds: z.string().trim().min(10).max(5000),
+    originalRequestReference: z.string().trim().min(1).max(200).optional(),
+  })
+  .strict();
+
+const actionTakenSchema = z.object({}).strict();
 
 const updateDraftSchema = z
   .object({
@@ -139,6 +153,74 @@ async function validateOwnedRtiCase(caseId, userId) {
   return linkedCase?.type === "RTI" ? linkedCase : null;
 }
 
+function validId(id) {
+  return mongoose.isObjectIdOrHexString(id);
+}
+
+function validateSourceCase(caseRecord, complaint, res) {
+  const details = caseRecord.details || caseRecord.summary || "";
+  const hasLocation = Boolean(
+    caseRecord.location?.address ||
+      caseRecord.location?.locality ||
+      caseRecord.location?.city ||
+      caseRecord.location?.district ||
+      caseRecord.location?.state,
+  );
+  const authorityName =
+    caseRecord.authority?.name?.trim() || complaint.authorityAssignment?.name?.trim();
+  const errors = [];
+
+  if (details.trim().length < 20) {
+    errors.push({
+      field: "case.details",
+      message: "Add at least 20 characters describing the issue before generating this draft",
+    });
+  }
+  if (!hasLocation) {
+    errors.push({
+      field: "case.location",
+      message: "Add at least one location detail before generating this draft",
+    });
+  }
+  if (!complaint.category) {
+    errors.push({ field: "complaint.category", message: "Civic issue category is required" });
+  }
+  if (!authorityName) {
+    errors.push({
+      field: "case.authority",
+      message: "Add the user-identified authority; it will remain marked unverified",
+    });
+  }
+  if (errors.length > 0) {
+    res.status(400).json({
+      success: false,
+      message: "Validation failed",
+      errors,
+    });
+    return null;
+  }
+
+  return { details: details.trim(), authorityName };
+}
+
+function isOwnedRtiApplicationDraft(draft) {
+  return draft?.kind === "APPLICATION";
+}
+
+function draftNotFound(res) {
+  return res.status(404).json({ success: false, message: "RTI application draft not found" });
+}
+
+function caseNotFound(res) {
+  return res.status(404).json({ success: false, message: "Civic case not found" });
+}
+
+function noDraftSubmissionMessage(kind) {
+  return kind === "FIRST_APPEAL"
+    ? "First-appeal draft saved for review. It has not been submitted."
+    : "Action-taken request draft saved for review. It has not been submitted.";
+}
+
 function ownedDraftQuery(req, id) {
   return { _id: id, user: req.auth.userId };
 }
@@ -185,6 +267,130 @@ export const rtiController = {
     return res.status(201).json({
       success: true,
       message: "RTI draft saved. It has not been submitted.",
+      data: safeDraft(draft),
+    });
+  },
+
+  async createFirstAppealDraft(req, res) {
+    if (!validId(req.params.id)) {
+      return res.status(400).json({ success: false, message: "Invalid RTI draft ID" });
+    }
+    const input = parseBody(firstAppealSchema, req.body, res);
+    if (!input) return;
+
+    const sourceDraft = await RtiDraft.findOne(ownedDraftQuery(req, req.params.id));
+    if (!isOwnedRtiApplicationDraft(sourceDraft)) {
+      return draftNotFound(res);
+    }
+
+    let linkedCase;
+    if (sourceDraft.case) {
+      linkedCase = await Case.findOne({
+        _id: sourceDraft.case,
+        user: req.auth.userId,
+        type: "RTI",
+      });
+      if (!linkedCase) {
+        return draftNotFound(res);
+      }
+    }
+
+    const authorityName =
+      sourceDraft.authority?.name ||
+      sourceDraft.receivingOffice?.name ||
+      linkedCase?.authority?.name ||
+      "[Public authority — identify and verify]";
+    const appeal = await RtiDraft.create({
+      user: req.auth.userId,
+      ...(sourceDraft.case ? { case: sourceDraft.case } : {}),
+      parentDraft: sourceDraft._id,
+      kind: "FIRST_APPEAL",
+      status: "DRAFT",
+      description: `Sample first appeal related to RTI draft ${sourceDraft._id}. Review and verify before use.`,
+      applicationText: generateFirstAppealDraft({
+        caseTitle: "the original RTI request",
+        caseDetails: sourceDraft.description,
+        authorityName,
+        originalRequestReference: input.originalRequestReference,
+        appealGrounds: input.grounds,
+      }),
+      ...(sourceDraft.authority
+        ? { authority: normalizeMetadata(sourceDraft.authority, "authority") }
+        : {}),
+      ...(sourceDraft.receivingOffice
+        ? { receivingOffice: normalizeMetadata(sourceDraft.receivingOffice, "receivingOffice") }
+        : {}),
+      submission: { status: "NOT_RECORDED" },
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: noDraftSubmissionMessage("FIRST_APPEAL"),
+      data: safeDraft(appeal),
+    });
+  },
+
+  async createActionTakenDraft(req, res) {
+    if (!validId(req.params.id)) {
+      return res.status(400).json({ success: false, message: "Invalid case ID" });
+    }
+    const input = parseBody(actionTakenSchema, req.body ?? {}, res);
+    if (!input) return;
+
+    const caseRecord = await Case.findOne({
+      _id: req.params.id,
+      user: req.auth.userId,
+      type: "CIVIC",
+    });
+    if (!caseRecord) {
+      return caseNotFound(res);
+    }
+    if (!["OPEN", "IN_PROGRESS", "WAITING_FOR_RESPONSE"].includes(caseRecord.status)) {
+      return res.status(409).json({
+        success: false,
+        message: "An action-taken request can only be prepared for an unresolved civic case",
+      });
+    }
+
+    const complaint = await CivicComplaint.findOne({
+      user: req.auth.userId,
+      case: caseRecord._id,
+    });
+    if (!complaint) {
+      return res.status(404).json({ success: false, message: "Civic case details not found" });
+    }
+
+    const source = validateSourceCase(caseRecord, complaint, res);
+    if (!source) return;
+
+    const location = caseRecord.location || {};
+    const draft = await RtiDraft.create({
+      user: req.auth.userId,
+      case: caseRecord._id,
+      kind: "ACTION_TAKEN_REQUEST",
+      status: "DRAFT",
+      description: `Sample action-taken information request related to civic case ${caseRecord.title}. Verify details before use.`,
+      applicationText: generateActionTakenRtiDraft({
+        caseTitle: caseRecord.title,
+        caseDetails: source.details,
+        category: complaint.category,
+        location,
+        authorityName: source.authorityName,
+      }),
+      receivingOffice: normalizeMetadata(
+        {
+          name: source.authorityName,
+          sourceDescription:
+            caseRecord.authority?.source || complaint.authorityAssignment?.sourceDescription,
+        },
+        "receivingOffice",
+      ),
+      submission: { status: "NOT_RECORDED" },
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: noDraftSubmissionMessage("ACTION_TAKEN_REQUEST"),
       data: safeDraft(draft),
     });
   },

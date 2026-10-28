@@ -39,6 +39,11 @@ origin reported by the frontend development server if it differs. Production req
 non-wildcard origin. The CORS middleware allows requests from that configured origin; bearer-token
 authentication does not require cookie credentials.
 
+If startup fails with `querySrv ECONNREFUSED` for an Atlas `mongodb+srv` URI, Node.js may be using a
+local DNS resolver that is not responding. Set `MONGODB_DNS_SERVERS` to comma-separated trusted DNS
+server IP addresses (for example `8.8.8.8,1.1.1.1`), then restart the backend. This override affects
+DNS lookups made by the backend process; leave it unset when the system resolver works.
+
 Start the backend:
 
 ```sh
@@ -136,6 +141,7 @@ Registration and login share a rate limit of 10 attempts per IP per 15-minute wi
 | POST | `/api/auth/register` | No | Create account |
 | POST | `/api/auth/login` | No | Authenticate |
 | GET | `/api/auth/me` | Protected | Get current user |
+| PATCH | `/api/auth/me` | Protected | Update the current user's name |
 
 Register (`POST /api/auth/register`):
 
@@ -158,6 +164,16 @@ Both successful authentication operations return `200` for login or `201` for re
   "token": "<JWT>"
 }
 ```
+
+Update the current user's name (`PATCH /api/auth/me`):
+
+```json
+{ "name": "Example User" }
+```
+
+Only `name` can be updated. Unknown fields such as `role`, `passwordHash`, or `email` are rejected.
+The response is `{ "message": "Profile updated", "user": { "id", "name", "email", "createdAt" } }`.
+Email and password changes are not currently supported.
 
 Email is normalized to lowercase. Passwords must be at least 8 characters and no more than 72
 UTF-8 bytes; they are bcrypt-hashed. Duplicate email returns `409`; invalid credentials return
@@ -215,12 +231,14 @@ Owner and internal `__v` fields are omitted. List responses have the shape
 
 ### RTI Assistant
 
-All routes require bearer authentication. Drafts are template-based and saved locally. No RTI is
+All routes require bearer authentication. Drafts are template-based and saved in MongoDB. No RTI is
 filed or sent.
 
 | Method | Path | Purpose |
 |---|---|---|
 | POST | `/api/rti/drafts` | Generate and save an application draft |
+| POST | `/api/rti/drafts/:id/first-appeal` | Generate a first-appeal draft from an owned RTI application draft |
+| POST | `/api/rti/cases/:id/action-taken-request` | Generate an action-taken request from an owned unresolved Civic case |
 | GET | `/api/rti/drafts?page=1&limit=20` | List own drafts |
 | GET | `/api/rti/drafts/:id` | Get own draft |
 | PATCH | `/api/rti/drafts/:id` | Edit and save own draft |
@@ -262,6 +280,41 @@ Representative response:
 Update accepts `description`, `applicationText`, `caseId`, `authority`, `receivingOffice`,
 `submissionDate`, and `responseDeadline`; `null` clears nullable metadata fields. Unknown fields
 are rejected.
+
+First-appeal draft example:
+
+```http
+POST /api/rti/drafts/507f1f77bcf86cd799439013/first-appeal
+Authorization: Bearer <JWT>
+Content-Type: application/json
+```
+
+```json
+{
+  "grounds": "The response recorded in my request does not address the information requested.",
+  "originalRequestReference": "Reference supplied by the user"
+}
+```
+
+`grounds` is required. The source must be the authenticated user's `APPLICATION` draft. If that
+draft links to an RTI case, the case must also belong to the authenticated user. The saved
+`FIRST_APPEAL` draft records its source in `parentDraft` and reuses the source case when present.
+The generated text is a review-only sample; authority and dates are not independently verified,
+and no statutory rule or deadline is asserted.
+
+Action-taken request example:
+
+```http
+POST /api/rti/cases/507f1f77bcf86cd799439012/action-taken-request
+Authorization: Bearer <JWT>
+Content-Type: application/json
+```
+
+The request body may be omitted or be an empty JSON object. The source must be the authenticated
+user's unresolved Civic case with its associated civic complaint, at least 20 characters of issue
+details, a location detail, and a user-identified authority. The saved
+`ACTION_TAKEN_REQUEST` draft links to that case. Authority information remains unverified. Missing
+required case facts return `400`; inaccessible cases return `404`. The draft is not submitted.
 
 ### Rights Companion
 

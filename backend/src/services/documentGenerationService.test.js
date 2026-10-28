@@ -27,7 +27,9 @@ function makeService({ caseRecord } = {}) {
       caseQueries.push(filter);
       return {
         async select() {
-          return caseRecord && filter.user === userId && filter._id === caseId &&
+          return caseRecord &&
+            filter.user === userId &&
+            filter._id === caseId &&
             (!filter.type || filter.type === caseRecord.type)
             ? caseRecord
             : null;

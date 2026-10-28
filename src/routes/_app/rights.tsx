@@ -107,7 +107,7 @@ function buildNotice(a: Answers) {
   const facts = isTenant(a["category"])
     ? `${a["issueSummary"]} I was your tenant from ${a["tenancyStart"]}${a["vacated"] ? ` until ${a["vacated"]}` : ""}.${a["deposit"] ? ` A security deposit of ₹${a["deposit"]} was paid.` : ""}${a["incidentDate"] ? ` The issue arose on ${a["incidentDate"]}.` : ""}`
     : `I have worked with ${party}. Since ${a["issueDate"]}, ${a["issueType"] || a["issueSummary"]}.${a["amount"] ? ` The amount involved is ₹${a["amount"]}.` : ""}`;
-  return `[DEMO TEMPLATE — NOT LEGAL ADVICE]
+  return `[DRAFT TEMPLATE — NOT LEGAL ADVICE]
 
 To,
 ${party}
@@ -185,7 +185,7 @@ function Result(a: Answers) {
           </span>
         </h3>
         <p className="mt-1 text-xs text-muted-foreground">
-          Demo rule-based check — not a validated or AI score.
+          General rules-based guidance — not a validated assessment or AI score.
         </p>
         <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
           {s.reasons.map((r) => (
@@ -200,8 +200,8 @@ function Result(a: Answers) {
           </h3>
           <p className="mt-2 text-sm text-muted-foreground">
             Your District Legal Services Authority (DLSA) may offer free legal aid to eligible
-            people. Contact your local DLSA office to check eligibility. (Demo information — verify
-            locally.)
+            people. Contact your local DLSA office to check eligibility. Confirm the process with an
+            official source.
           </p>
         </SurfaceCard>
       )}
@@ -222,7 +222,7 @@ function RightsPage() {
         questions={questions}
         buildDocument={buildNotice}
         renderResult={Result}
-        documentTitle="Sample Notice"
+        documentTitle="Notice Draft"
         onCreateCase={(a, documentContent) => {
           const id = createCase({
             type: "rights",

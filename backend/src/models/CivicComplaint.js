@@ -62,7 +62,7 @@ const civicComplaintSchema = new Schema(
   { timestamps: true },
 );
 
-civicComplaintSchema.index({ user: 1, category:  1, updatedAt: -1 });
+civicComplaintSchema.index({ user: 1, category: 1, updatedAt: -1 });
 
 export default mongoose.models.CivicComplaint ||
   mongoose.model("CivicComplaint", civicComplaintSchema);
